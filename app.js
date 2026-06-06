@@ -25,6 +25,35 @@ function getArmLabels() {
   };
 }
 const TIER_ICONS  = { common: '◦', rare: '◈', epic: '⬡', legendary: '★' };
+
+// ── Achievement definitions
+const ACHIEVEMENTS = [
+  // First actions
+  { id: 'first_task',      icon: '◦', tier: 'common',    title: 'The Work Begins',   desc: 'Complete your first task.' },
+  { id: 'first_quest',     icon: '◦', tier: 'common',    title: 'First Steps',       desc: 'Complete your first quest.' },
+  // Quest count
+  { id: 'quests_3',        icon: '◦', tier: 'common',    title: 'Wayfarer',          desc: 'Complete 3 quests.' },
+  { id: 'quests_10',       icon: '◈', tier: 'rare',      title: 'Veteran',           desc: 'Complete 10 quests.' },
+  { id: 'quests_25',       icon: '⬡', tier: 'epic',      title: 'Champion',          desc: 'Complete 25 quests.' },
+  // Task count
+  { id: 'tasks_10',        icon: '◦', tier: 'common',    title: 'Industrious',       desc: 'Complete 10 tasks.' },
+  { id: 'tasks_50',        icon: '◈', tier: 'rare',      title: 'Relentless',        desc: 'Complete 50 tasks.' },
+  { id: 'tasks_100',       icon: '⬡', tier: 'epic',      title: 'Iron Will',         desc: 'Complete 100 tasks.' },
+  // Level milestones
+  { id: 'level_5',         icon: '◈', tier: 'rare',      title: 'Apprentice',        desc: 'Reach level 5.' },
+  { id: 'level_10',        icon: '⬡', tier: 'epic',      title: 'Adept',             desc: 'Reach level 10.' },
+  { id: 'level_20',        icon: '★', tier: 'legendary', title: 'Master',            desc: 'Reach level 20.' },
+  // Tier completions
+  { id: 'rare_quest',      icon: '◈', tier: 'rare',      title: 'Rare Find',         desc: 'Complete a rare quest.' },
+  { id: 'epic_quest',      icon: '⬡', tier: 'epic',      title: 'Epic Deed',         desc: 'Complete an epic quest.' },
+  { id: 'legendary_quest', icon: '★', tier: 'legendary', title: 'Legendary',         desc: 'Complete a legendary quest.' },
+  // Variety
+  { id: 'all_arms',        icon: '★', tier: 'legendary', title: 'Renaissance',       desc: 'Complete a quest in every area.' },
+  // XP milestones
+  { id: 'xp_500',          icon: '◦', tier: 'common',    title: 'Gaining Ground',    desc: 'Earn 500 total XP.' },
+  { id: 'xp_2000',         icon: '◈', tier: 'rare',      title: 'Power Surge',       desc: 'Earn 2000 total XP.' },
+  { id: 'xp_5000',         icon: '⬡', tier: 'epic',      title: 'Ascendant',         desc: 'Earn 5000 total XP.' },
+];
 const ARM_VARS    = {
   creative: 'var(--arm-creative)',
   writing:  'var(--arm-writing)',
@@ -241,18 +270,39 @@ function renderCharacter() {
 
   // Achievements
   const achList = document.getElementById('cs-achievements');
-  if (!state.achievements.length) {
-    achList.innerHTML = '<li class="no-quests">No achievements yet</li>';
+  // Summary line above the list
+  const totalAch = ACHIEVEMENTS.length;
+  const earnedAch = state.achievements.length;
+  document.getElementById('cs-ach-count').textContent = `${earnedAch} / ${totalAch}`;
+
+  if (!earnedAch) {
+    achList.innerHTML = '<li class="no-quests">No achievements yet — complete tasks and quests to unlock them.</li>';
   } else {
-    achList.innerHTML = state.achievements.map(a => `
-      <li class="achievement-item">
-        <span class="achievement-icon">★</span>
-        <div>
-          <div class="achievement-title">${a.title}</div>
-          <div class="achievement-desc">${a.desc}</div>
+    // Show earned first, then locked stubs
+    const earnedIds = new Set(state.achievements.map(a => a.id));
+    const earnedItems = state.achievements.slice().reverse().map(a => {
+      const date = a.unlockedAt ? new Date(a.unlockedAt).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : '';
+      return `
+        <li class="achievement-item earned">
+          <span class="achievement-icon tier-${a.tier || 'common'}">${a.icon || '◦'}</span>
+          <div class="achievement-text">
+            <div class="achievement-title">${a.title}</div>
+            <div class="achievement-desc">${a.desc}</div>
+            ${date ? `<div class="achievement-date">${date}</div>` : ''}
+          </div>
+        </li>
+      `;
+    });
+    const lockedItems = ACHIEVEMENTS.filter(def => !earnedIds.has(def.id)).map(def => `
+      <li class="achievement-item locked">
+        <span class="achievement-icon locked-icon">?</span>
+        <div class="achievement-text">
+          <div class="achievement-title">${def.title}</div>
+          <div class="achievement-desc">${def.desc}</div>
         </div>
       </li>
-    `).join('');
+    `);
+    achList.innerHTML = [...earnedItems, ...lockedItems].join('');
   }
 }
 
@@ -348,6 +398,7 @@ function toggleTask(questId, idx) {
   }
 
   saveState();
+  checkAchievements();
   renderMap();
   renderCharacter();
   if (openQuestId === questId) openQuest(questId);
@@ -360,8 +411,10 @@ function awardXP(amount) {
   const prev = state.character.level;
   recalcLevel();
   if (state.character.level > prev) {
+    checkAchievements();
     setTimeout(() => showLevelUp(state.character.level), 600);
   } else {
+    checkAchievements();
     animateXPBar();
   }
 }
@@ -434,6 +487,84 @@ function showLevelUp(level) {
   overlay.addEventListener('click', dismiss);
   clearTimeout(overlay._timer);
   overlay._timer = setTimeout(dismiss, 3000);
+}
+
+// ── Achievement notification queue
+let achQueue = [];
+let achShowing = false;
+
+function showAchievementToast(ach) {
+  achQueue.push(ach);
+  if (!achShowing) drainAchQueue();
+}
+
+function drainAchQueue() {
+  if (!achQueue.length) { achShowing = false; return; }
+  achShowing = true;
+  const ach  = achQueue.shift();
+  const notif = document.getElementById('ach-notification');
+  document.getElementById('ach-notif-icon').textContent  = ach.icon;
+  document.getElementById('ach-notif-icon').className    = `ach-notif-icon tier-${ach.tier}`;
+  document.getElementById('ach-notif-title').textContent = ach.title;
+  document.getElementById('ach-notif-desc').textContent  = ach.desc;
+  notif.classList.remove('hidden');
+  requestAnimationFrame(() => requestAnimationFrame(() => notif.classList.add('show')));
+  clearTimeout(notif._timer);
+  notif._timer = setTimeout(() => {
+    notif.classList.remove('show');
+    setTimeout(() => {
+      notif.classList.add('hidden');
+      drainAchQueue();
+    }, 280);
+  }, 3400);
+}
+
+// ── Check and unlock achievements
+function checkAchievements() {
+  const c        = state.character;
+  const completed = state.quests.filter(q => q.completedAt);
+  const cCount   = completed.length;
+  const tDone    = state.quests.reduce((s, q) => s + q.tasksDone.filter(Boolean).length, 0);
+  const arms     = Object.keys(state.character.arms || { creative:1, writing:1, apps:1, life:1 });
+
+  const checks = {
+    first_task:       tDone >= 1,
+    first_quest:      cCount >= 1,
+    quests_3:         cCount >= 3,
+    quests_10:        cCount >= 10,
+    quests_25:        cCount >= 25,
+    tasks_10:         tDone >= 10,
+    tasks_50:         tDone >= 50,
+    tasks_100:        tDone >= 100,
+    level_5:          c.level >= 5,
+    level_10:         c.level >= 10,
+    level_20:         c.level >= 20,
+    rare_quest:       completed.some(q => q.tier === 'rare'),
+    epic_quest:       completed.some(q => q.tier === 'epic'),
+    legendary_quest:  completed.some(q => q.tier === 'legendary'),
+    all_arms:         arms.every(arm => completed.some(q => q.arm === arm)),
+    xp_500:           c.xp >= 500,
+    xp_2000:          c.xp >= 2000,
+    xp_5000:          c.xp >= 5000,
+  };
+
+  const earned = new Set(state.achievements.map(a => a.id));
+  const newOnes = [];
+  ACHIEVEMENTS.forEach(def => {
+    if (!earned.has(def.id) && checks[def.id]) {
+      state.achievements.push({
+        id: def.id, icon: def.icon, tier: def.tier,
+        title: def.title, desc: def.desc,
+        unlockedAt: new Date().toISOString()
+      });
+      newOnes.push(def);
+    }
+  });
+
+  if (newOnes.length) {
+    saveState();
+    newOnes.forEach((ach, i) => setTimeout(() => showAchievementToast(ach), i * 3800));
+  }
 }
 
 // ── Portrait handling

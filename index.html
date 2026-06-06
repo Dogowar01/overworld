@@ -165,7 +165,10 @@
             <li class="no-quests">No quests active</li>
           </ul>
 
-          <div class="cs-section-label" style="margin-top:20px">Achievements</div>
+          <div class="cs-section-label" style="margin-top:20px">
+            Achievements
+            <span class="cs-ach-count" id="cs-ach-count">0 / 18</span>
+          </div>
           <ul class="cs-achievement-list" id="cs-achievements">
             <li class="no-quests">No achievements yet</li>
           </ul>
@@ -257,6 +260,18 @@
     <!-- ── XP toast ── -->
     <div id="xp-toast" class="xp-toast hidden">
       <span class="xp-toast-text" id="xp-toast-text">+15 XP</span>
+    </div>
+
+    <!-- ── Achievement notification ── -->
+    <div id="ach-notification" class="ach-notification hidden">
+      <div class="ach-notif-eyebrow">Achievement Unlocked</div>
+      <div class="ach-notif-body">
+        <span class="ach-notif-icon" id="ach-notif-icon">★</span>
+        <div class="ach-notif-text">
+          <div class="ach-notif-title" id="ach-notif-title">Legend</div>
+          <div class="ach-notif-desc" id="ach-notif-desc">Complete a legendary quest.</div>
+        </div>
+      </div>
     </div>
 
     <!-- ── Level-up overlay ── -->
