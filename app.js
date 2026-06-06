@@ -1120,6 +1120,93 @@ function saveNewQuest() {
   }, 400);
 }
 
+// ── Chronicle
+function renderChronicle() {
+  const entries  = state.chronicle.slice().reverse(); // newest first
+  const countEl  = document.getElementById('chronicle-count');
+  const emptyEl  = document.getElementById('chronicle-empty');
+  const timeline = document.getElementById('chronicle-timeline');
+
+  countEl.textContent = entries.length === 1 ? '1 entry' : `${entries.length} entries`;
+  emptyEl.style.display  = entries.length ? 'none' : '';
+  timeline.style.display = entries.length ? '' : 'none';
+
+  if (!entries.length) return;
+
+  const armLabels = getArmLabels();
+
+  // Group by month
+  const groups = {};
+  entries.forEach(e => {
+    const d   = new Date(e.completedAt);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    const lbl = d.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+    if (!groups[key]) groups[key] = { label: lbl, items: [] };
+    groups[key].items.push(e);
+  });
+
+  let html = '';
+  Object.values(groups).forEach(group => {
+    html += `<div class="chronicle-month-label">${group.label}</div>`;
+    group.items.forEach((e, i) => {
+      const quest    = state.quests.find(q => q.id === e.questId);
+      const date     = new Date(e.completedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+      const tier     = e.tier || 'common';
+      const icon     = TIER_ICONS[tier] || '◦';
+      const arm      = e.arm || 'creative';
+      const armLabel = armLabels[arm] || arm;
+      const taskCount = quest ? quest.tasks.length : '?';
+      const xpEarned  = quest
+        ? (XP.task[tier] * quest.tasks.length) + XP.quest[tier]
+        : XP.quest[tier];
+      const isLast    = i === group.items.length - 1;
+      const noteHtml  = e.note
+        ? `<div class="chronicle-entry-note">${e.note}</div>`
+        : '';
+
+      html += `
+        <div class="chronicle-entry">
+          <div class="chronicle-spine">
+            <div class="chronicle-tier-dot ${tier}">${icon}</div>
+            ${!isLast ? '<div class="chronicle-spine-line"></div>' : ''}
+          </div>
+          <div class="chronicle-entry-body">
+            <div class="chronicle-entry-meta">
+              <span class="chronicle-arm-tag ${arm}">${armLabel}</span>
+              <span class="chronicle-entry-date">${date}</span>
+            </div>
+            <div class="chronicle-entry-title">${e.title}</div>
+            <div class="chronicle-entry-stats">
+              <span class="chronicle-entry-stat">
+                <span class="chronicle-entry-stat-icon">◦</span>${taskCount} task${taskCount !== 1 ? 's' : ''}
+              </span>
+              <span class="chronicle-entry-stat">
+                <span class="chronicle-entry-stat-icon">✦</span>${xpEarned} XP
+              </span>
+            </div>
+            ${noteHtml}
+          </div>
+        </div>
+      `;
+    });
+  });
+
+  timeline.innerHTML = html;
+}
+
+function showChronicle() {
+  document.getElementById('map-section').classList.add('hidden');
+  document.getElementById('chronicle-section').classList.remove('hidden');
+  document.getElementById('fab-create').style.display = 'none';
+  renderChronicle();
+}
+
+function showMap() {
+  document.getElementById('chronicle-section').classList.add('hidden');
+  document.getElementById('map-section').classList.remove('hidden');
+  document.getElementById('fab-create').style.display = '';
+}
+
 // ── Filters
 function renderFilters() {
   const labels = getArmLabels();
@@ -1179,6 +1266,8 @@ function init() {
     b.addEventListener('click', () => {
       document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
+      if (b.dataset.view === 'chronicle') showChronicle();
+      else showMap();
     });
   });
 
