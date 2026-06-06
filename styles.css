@@ -26,8 +26,9 @@
   --font-mono:    'DM Mono', 'Courier New', monospace;
   --font-body:    'DM Sans', system-ui, sans-serif;
 
-  --header-h: 52px;
-  --radius:   4px;
+  --header-h:   52px;
+  --radius:     4px;
+  --safe-top:    env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -52,17 +53,23 @@ body {
 
 /* ── Header ── */
 #site-header {
-  height: var(--header-h);
-  min-height: var(--header-h);
+  height: calc(var(--header-h) + var(--safe-top));
+  min-height: calc(var(--header-h) + var(--safe-top));
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 16px calc(0px);
+  padding-top: var(--safe-top);
   border-bottom: 1px solid var(--border);
   background: var(--bg);
   position: relative;
   z-index: 10;
   flex-shrink: 0;
+}
+
+/* Push nav items down to the actual visible header row */
+.header-left, .header-nav, .header-right {
+  padding-bottom: 8px;
 }
 
 .header-left {
@@ -989,7 +996,7 @@ body {
 .char-create-inner {
   width: 100%;
   max-width: 480px;
-  padding: 64px 28px calc(48px + env(safe-area-inset-bottom, 0px));
+  padding: calc(56px + var(--safe-top)) 28px calc(48px + var(--safe-bottom));
   display: flex;
   flex-direction: column;
 }
