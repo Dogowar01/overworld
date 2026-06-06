@@ -1,5 +1,13 @@
-const CACHE = 'overworld-v4';
-const ASSETS = ['/', '/index.html', '/styles.css', '/app.js', '/data.js', '/map.png'];
+const CACHE = 'overworld-v5';
+const ASSETS = [
+  '/overworld/',
+  '/overworld/index.html',
+  '/overworld/styles.css',
+  '/overworld/app.js',
+  '/overworld/data.js',
+  '/overworld/map.png',
+  '/overworld/manifest.json'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
