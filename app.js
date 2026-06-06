@@ -491,6 +491,13 @@ function openCreateSheet() {
     });
   }
 
+  // Collapse the prereq list and reset toggle
+  const prereqList2 = document.getElementById('cq-prereq-list');
+  const toggle = document.getElementById('cq-link-toggle');
+  prereqList2.classList.add('hidden');
+  toggle.classList.remove('open');
+  toggle.querySelector('.cq-link-toggle-icon').textContent = '+';
+
   const sheet = document.getElementById('create-sheet');
   sheet.classList.remove('hidden');
   requestAnimationFrame(() => requestAnimationFrame(() => sheet.classList.add('open')));
@@ -630,6 +637,14 @@ function init() {
       cqSelectedTier = c.dataset.tier;
       document.querySelectorAll('.cq-tier-card').forEach(x => x.classList.toggle('active', x === c));
     });
+  });
+
+  document.getElementById('cq-link-toggle').addEventListener('click', () => {
+    const toggle   = document.getElementById('cq-link-toggle');
+    const list     = document.getElementById('cq-prereq-list');
+    const isOpen   = toggle.classList.toggle('open');
+    list.classList.toggle('hidden', !isOpen);
+    toggle.querySelector('.cq-link-toggle-icon').textContent = isOpen ? '×' : '+';
   });
 
   document.getElementById('cq-add-task').addEventListener('click', () => {
