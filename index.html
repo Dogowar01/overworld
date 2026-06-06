@@ -373,21 +373,16 @@
       </div>
 
       <label class="cc-label" style="margin-top:28px">Portrait</label>
-      <p class="cc-hint">Create your character portrait on Artbreeder, then upload it here.</p>
+      <p class="cc-hint">Generated from your choices. Tap "New look" to try another variation.</p>
 
       <div class="cc-portrait-block">
         <div class="cc-portrait-circle" id="cc-portrait-circle">
           <span class="cc-portrait-placeholder">✦</span>
         </div>
         <div class="cc-portrait-actions">
-          <a class="cc-artbreeder-btn" href="https://www.artbreeder.com/create/portrait" target="_blank" rel="noopener">
-            Open Artbreeder ↗
-          </a>
-          <label class="cc-upload-btn" for="cc-portrait-file">
-            Upload Portrait
-          </label>
+          <button class="cc-regen-btn" id="cc-regen-btn" type="button">↻ New look</button>
+          <label class="cc-upload-btn" for="cc-portrait-file">↑ Use own image</label>
           <input type="file" id="cc-portrait-file" accept="image/*" style="display:none" />
-          <span class="cc-upload-hint" id="cc-upload-hint">No image selected</span>
         </div>
       </div>
 

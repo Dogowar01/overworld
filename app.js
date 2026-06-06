@@ -437,7 +437,75 @@ function showLevelUp(level) {
 }
 
 // ── Portrait handling
-// Resize an image file to a square data URL (JPEG, max 300px) for storage
+
+// Build a DiceBear adventurer URL from character data + variation index
+function buildPortraitUrl(character, variation) {
+  const seed = (character.name || 'adventurer') + (variation ? '-' + variation : '');
+  const h    = seed.split('').reduce((a, c) => ((a * 31) + c.charCodeAt(0)) & 0xffffff, 7);
+
+  // Background colour per class
+  const bgMap = {
+    Chronicler: 'b89038', Architect: '28a0a0',
+    Artificer:  '7048b0', Wanderer:  'b85048'
+  };
+  const bg = bgMap[character.class] || '604878';
+
+  // Skin tone — diverse, deterministic from name
+  const skins = ['f2d3b1','ecad80','e58c61','cf7049','b55338','8c4020','5c2810'];
+  const skin  = skins[h % skins.length];
+
+  // Hair colour
+  const hairs = ['100800','3d1f0a','6b3a1f','8b5a2b','c49a4a','d0ccc8','888888'];
+  const hair  = hairs[(h >> 3) % hairs.length];
+
+  // Hair style by gender
+  const womanHair = ['long01','long02','long03','long04','long05','long06','long07',
+                     'long08','long09','long10','long11','long12','long13','long14',
+                     'long15','long16','long17','long18','long19','long20','long21'];
+  const manHair   = ['short01','short02','short03','short04','short05','short06',
+                     'short07','short08','short09','short10','short11','short12',
+                     'short13','short14','short15','short16','short17','short18','short19'];
+  const nbHair    = ['short05','short10','short15','short19','long05','long10','long15','long20'];
+
+  const pool = character.gender === 'Woman'  ? womanHair
+             : character.gender === 'Man'    ? manHair
+             :                                 nbHair;
+  const hairStyle = pool[(h >> 6) % pool.length];
+
+  // Eyes
+  const eyePool = ['variant01','variant02','variant03','variant04','variant05',
+                   'variant06','variant07','variant08','variant09','variant10'];
+  const eyes = eyePool[(h >> 9) % eyePool.length];
+
+  const p = new URLSearchParams({
+    seed,
+    backgroundColor:       bg,
+    backgroundType:        'gradientLinear',
+    backgroundRotation:    '150',
+    skinColor:             skin,
+    hairColor:             hair,
+    hair:                  hairStyle,
+    eyes,
+    radius:                '50'
+  });
+  return `https://api.dicebear.com/8.x/adventurer/svg?${p}`;
+}
+
+// Fetch the portrait SVG from DiceBear and return as a data URL
+async function fetchPortrait(character, variation) {
+  const url = buildPortraitUrl(character, variation);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('fetch failed');
+    const svg  = await res.text();
+    const b64  = btoa(unescape(encodeURIComponent(svg)));
+    return 'data:image/svg+xml;base64,' + b64;
+  } catch {
+    return null;
+  }
+}
+
+// Resize an uploaded image file to a square JPEG data URL
 function resizePortrait(file, size) {
   size = size || 300;
   return new Promise((resolve, reject) => {
@@ -445,10 +513,8 @@ function resizePortrait(file, size) {
     const url = URL.createObjectURL(file);
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = size;
-      canvas.height = size;
+      canvas.width = size; canvas.height = size;
       const ctx = canvas.getContext('2d');
-      // Centre-crop square
       const min = Math.min(img.width, img.height);
       const sx  = (img.width  - min) / 2;
       const sy  = (img.height - min) / 2;
@@ -467,7 +533,7 @@ function applyPortrait(dataUrl) {
   renderCharacter();
 }
 
-// ── Portrait generator (kept as fallback, no longer primary)
+// ── Portrait generator (SVG fallback — kept but not primary)
 function generatePortraitSVG(character, uid) {
   const cls    = character.class  || 'Chronicler';
   const race   = character.race   || 'Human';
@@ -663,7 +729,38 @@ let ccSelectedClass  = 'Chronicler';
 let ccSelectedRace   = 'Human';
 let ccSelectedGender = 'Man';
 
-function updateCcPreview() { /* portrait now uploaded, not generated */ }
+let ccVariation    = 0;
+let ccPreviewTimer = null;
+let ccPreviewData  = null; // last fetched data URL
+
+async function updateCcPreview(immediate) {
+  clearTimeout(ccPreviewTimer);
+  const run = async () => {
+    const circle = document.getElementById('cc-portrait-circle');
+    if (!circle) return;
+    circle.classList.add('loading');
+
+    const char = {
+      name:   document.getElementById('cc-name').value.trim() || 'Adventurer',
+      class:  ccSelectedClass,
+      race:   ccSelectedRace,
+      gender: ccSelectedGender
+    };
+
+    const dataUrl = await fetchPortrait(char, ccVariation);
+    circle.classList.remove('loading');
+    if (dataUrl) {
+      ccPreviewData = dataUrl;
+      circle.innerHTML = `<img src="${dataUrl}" alt="Portrait preview" />`;
+    }
+  };
+
+  if (immediate) {
+    run();
+  } else {
+    ccPreviewTimer = setTimeout(run, 500);
+  }
+}
 
 function initCharCreate() {
   const screen = document.getElementById('char-create');
@@ -673,7 +770,7 @@ function initCharCreate() {
     card.addEventListener('click', () => {
       ccSelectedRace = card.dataset.race;
       document.querySelectorAll('.cc-race-card').forEach(c => c.classList.toggle('active', c === card));
-      updateCcPreview();
+      updateCcPreview(true);
     });
   });
 
@@ -682,7 +779,7 @@ function initCharCreate() {
     pill.addEventListener('click', () => {
       ccSelectedGender = pill.dataset.gender;
       document.querySelectorAll('.cc-gender-pill').forEach(p => p.classList.toggle('active', p === pill));
-      updateCcPreview();
+      updateCcPreview(true);
     });
   });
 
@@ -691,29 +788,37 @@ function initCharCreate() {
     card.addEventListener('click', () => {
       ccSelectedClass = card.dataset.class;
       document.querySelectorAll('.cc-class-card').forEach(c => c.classList.toggle('active', c === card));
-      updateCcPreview();
+      updateCcPreview(true);
     });
   });
 
-  // Portrait file upload
-  let pendingPortrait = null;
+  // "New look" button — increment variation and regenerate
+  document.getElementById('cc-regen-btn').addEventListener('click', () => {
+    ccVariation++;
+    ccPreviewData = null;
+    updateCcPreview(true);
+  });
+
+  // Own image upload overrides generated portrait
   document.getElementById('cc-portrait-file').addEventListener('change', async e => {
     const file = e.target.files[0];
     if (!file) return;
     try {
       const dataUrl = await resizePortrait(file, 300);
-      pendingPortrait = dataUrl;
-      // Show preview
-      const circle = document.getElementById('cc-portrait-circle');
-      circle.innerHTML = `<img src="${dataUrl}" alt="Portrait preview" />`;
-      document.getElementById('cc-upload-hint').textContent = file.name;
-    } catch (err) {
-      document.getElementById('cc-upload-hint').textContent = 'Could not load image';
-    }
+      ccPreviewData = dataUrl;
+      document.getElementById('cc-portrait-circle').innerHTML =
+        `<img src="${dataUrl}" alt="Portrait preview" />`;
+    } catch { /* ignore */ }
+    e.target.value = '';
   });
 
-  // Stash pendingPortrait on begin
-  document.getElementById('cc-begin')._getPortrait = () => pendingPortrait;
+  // Name input → debounced portrait refresh
+  document.getElementById('cc-name').addEventListener('input', () => updateCcPreview(false));
+
+  // Initial portrait render
+  ccVariation   = 0;
+  ccPreviewData = null;
+  updateCcPreview(true);
 
   // Begin button
   document.getElementById('cc-begin').addEventListener('click', () => {
@@ -735,16 +840,12 @@ function initCharCreate() {
       if (val) arms[slots[i]] = val;
     });
 
-    const portrait = document.getElementById('cc-begin')._getPortrait
-      ? document.getElementById('cc-begin')._getPortrait()
-      : null;
-
     state.character.name    = name;
     state.character.class   = ccSelectedClass;
     state.character.race    = ccSelectedRace;
     state.character.gender  = ccSelectedGender;
     state.character.arms    = arms;
-    state.character.portrait = portrait || state.character.portrait || null;
+    state.character.portrait = ccPreviewData || state.character.portrait || null;
     state.character.level   = 1;
     state.character.xp      = 0;
     state.characterCreated  = true;
