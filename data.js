@@ -2,12 +2,14 @@
 // Positions are percentages of the map canvas (x, y)
 
 const DEMO_DATA = {
+  characterCreated: false,
+
   character: {
-    name: "Kirk",
+    name: "",
     class: "Chronicler",
-    level: 3,
-    xp: 420,
-    xpToNext: 490  // level 4 threshold
+    level: 1,
+    xp: 0,
+    xpToNext: 110
   },
 
   quests: [

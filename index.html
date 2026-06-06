@@ -268,6 +268,49 @@
 
   </div>
 
+  <!-- ── Character creation ── -->
+  <div id="char-create" class="char-create">
+    <div class="char-create-inner">
+      <p class="cc-eyebrow">Overworld</p>
+      <h1 class="cc-title">Begin Your Journey</h1>
+      <p class="cc-sub">Name your adventurer and choose a class. The world awaits.</p>
+
+      <label class="cc-label">Your Name</label>
+      <input class="cc-name-input" id="cc-name" type="text" placeholder="Enter your name…" maxlength="24" autocomplete="off" />
+
+      <label class="cc-label" style="margin-top:28px">Choose a Class</label>
+      <div class="cc-class-grid" id="cc-class-grid">
+
+        <button class="cc-class-card active" data-class="Chronicler">
+          <span class="cc-class-glyph">✦</span>
+          <span class="cc-class-name">Chronicler</span>
+          <span class="cc-class-desc">Keeper of records. Tracks every step of the journey with precision.</span>
+        </button>
+
+        <button class="cc-class-card" data-class="Architect">
+          <span class="cc-class-glyph">⬡</span>
+          <span class="cc-class-name">Architect</span>
+          <span class="cc-class-desc">Builder of systems. Turns grand visions into solid structure.</span>
+        </button>
+
+        <button class="cc-class-card" data-class="Artificer">
+          <span class="cc-class-glyph">◈</span>
+          <span class="cc-class-name">Artificer</span>
+          <span class="cc-class-desc">Maker of things. Brings ideas into the world through craft.</span>
+        </button>
+
+        <button class="cc-class-card" data-class="Wanderer">
+          <span class="cc-class-glyph">◎</span>
+          <span class="cc-class-name">Wanderer</span>
+          <span class="cc-class-desc">Explorer of paths. Finds the way forward when none exists.</span>
+        </button>
+
+      </div>
+
+      <button class="cc-begin-btn" id="cc-begin">Enter the World</button>
+    </div>
+  </div>
+
   <script src="data.js"></script>
   <script src="app.js"></script>
   <script>

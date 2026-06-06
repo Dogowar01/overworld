@@ -27,6 +27,8 @@ const CLASS_GLYPH = { Chronicler: '✦', Architect: '⬡', Artificer: '◈', Wan
 
 // ── State
 let state = JSON.parse(localStorage.getItem('overworld_state') || 'null') || deepClone(DEMO_DATA);
+// Migration: mark as created if name already set (existing saves)
+if (state.character.name && !state.characterCreated) state.characterCreated = true;
 let activeFilter = 'all';
 let activeStatusFilter = 'all';
 let openQuestId = null;
@@ -437,6 +439,51 @@ function showLevelUp(level) {
   overlay._timer = setTimeout(dismiss, 3000);
 }
 
+// ── Character creation
+const CLASS_GLYPHS_MAP = {
+  Chronicler: '✦', Architect: '⬡', Artificer: '◈', Wanderer: '◎'
+};
+
+let ccSelectedClass = 'Chronicler';
+
+function initCharCreate() {
+  const screen = document.getElementById('char-create');
+
+  // Class card selection
+  document.querySelectorAll('.cc-class-card').forEach(card => {
+    card.addEventListener('click', () => {
+      ccSelectedClass = card.dataset.class;
+      document.querySelectorAll('.cc-class-card').forEach(c => c.classList.toggle('active', c === card));
+    });
+  });
+
+  // Begin button
+  document.getElementById('cc-begin').addEventListener('click', () => {
+    const nameInput = document.getElementById('cc-name');
+    const name = nameInput.value.trim();
+    if (!name) {
+      nameInput.focus();
+      nameInput.style.borderColor = 'var(--arm-life)';
+      setTimeout(() => nameInput.style.borderColor = '', 1200);
+      return;
+    }
+
+    state.character.name  = name;
+    state.character.class = ccSelectedClass;
+    state.character.level = 1;
+    state.character.xp    = 0;
+    state.characterCreated = true;
+    saveState();
+
+    // Fade out, then remove
+    screen.classList.add('fade-out');
+    setTimeout(() => {
+      screen.classList.add('hidden');
+      renderCharacter();
+    }, 600);
+  });
+}
+
 // ── Create quest sheet
 function openCreateSheet() {
   // Reset form state
@@ -596,6 +643,12 @@ function init() {
   recalcLevel();
   renderMap();
   renderCharacter();
+
+  // Character creation — show on first run, hide immediately if already done
+  initCharCreate();
+  if (state.characterCreated) {
+    document.getElementById('char-create').classList.add('hidden');
+  }
 
   // Character sheet
   document.getElementById('char-portrait-btn').addEventListener('click', openCharSheet);
