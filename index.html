@@ -118,6 +118,8 @@
               <div class="cs-portrait-frame" id="cs-portrait-frame">
                 <span class="cs-portrait-glyph" id="cs-char-glyph">✦</span>
               </div>
+              <label class="cs-change-portrait" for="cs-portrait-file" title="Change portrait">✎</label>
+              <input type="file" id="cs-portrait-file" accept="image/*" style="display:none" />
             </div>
             <div class="cs-identity">
               <p class="cs-class" id="cs-char-class">Chronicler</p>
@@ -370,11 +372,22 @@
 
       </div>
 
-      <div class="cc-preview-row">
-        <div class="cc-portrait-preview" id="cc-portrait-preview"></div>
-        <div class="cc-preview-info">
-          <span class="cc-preview-name" id="cc-preview-name-label">Your portrait</span>
-          <span class="cc-preview-sub">Updates as you choose</span>
+      <label class="cc-label" style="margin-top:28px">Portrait</label>
+      <p class="cc-hint">Create your character portrait on Artbreeder, then upload it here.</p>
+
+      <div class="cc-portrait-block">
+        <div class="cc-portrait-circle" id="cc-portrait-circle">
+          <span class="cc-portrait-placeholder">✦</span>
+        </div>
+        <div class="cc-portrait-actions">
+          <a class="cc-artbreeder-btn" href="https://www.artbreeder.com/create/portrait" target="_blank" rel="noopener">
+            Open Artbreeder ↗
+          </a>
+          <label class="cc-upload-btn" for="cc-portrait-file">
+            Upload Portrait
+          </label>
+          <input type="file" id="cc-portrait-file" accept="image/*" style="display:none" />
+          <span class="cc-upload-hint" id="cc-upload-hint">No image selected</span>
         </div>
       </div>
 

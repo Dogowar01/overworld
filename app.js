@@ -175,18 +175,19 @@ function renderCharacter() {
   // Header portrait
   document.getElementById('portrait-level').textContent = c.level;
   const headerPortrait = document.getElementById('header-portrait-wrap');
-  if (state.characterCreated && c.race) {
-    document.getElementById('char-glyph').style.display = 'none';
-    headerPortrait.innerHTML = generatePortraitSVG(c, 'hdr');
+  const glyphEl = document.getElementById('char-glyph');
+  if (c.portrait) {
+    glyphEl.style.display = 'none';
+    headerPortrait.innerHTML = `<img src="${c.portrait}" alt="${c.name}" />`;
   } else {
-    document.getElementById('char-glyph').style.display = '';
+    glyphEl.style.display = '';
     headerPortrait.innerHTML = '';
   }
 
   // Sheet portrait
   const portraitFrame = document.getElementById('cs-portrait-frame');
-  if (state.characterCreated && c.race) {
-    portraitFrame.innerHTML = generatePortraitSVG(c, 'sheet');
+  if (c.portrait) {
+    portraitFrame.innerHTML = `<img src="${c.portrait}" alt="${c.name}" />`;
   } else {
     portraitFrame.innerHTML = `<span class="cs-portrait-glyph">${glyph}</span>`;
   }
@@ -435,7 +436,38 @@ function showLevelUp(level) {
   overlay._timer = setTimeout(dismiss, 3000);
 }
 
-// ── Portrait generator
+// ── Portrait handling
+// Resize an image file to a square data URL (JPEG, max 300px) for storage
+function resizePortrait(file, size) {
+  size = size || 300;
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      // Centre-crop square
+      const min = Math.min(img.width, img.height);
+      const sx  = (img.width  - min) / 2;
+      const sy  = (img.height - min) / 2;
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+function applyPortrait(dataUrl) {
+  state.character.portrait = dataUrl;
+  saveState();
+  renderCharacter();
+}
+
+// ── Portrait generator (kept as fallback, no longer primary)
 function generatePortraitSVG(character, uid) {
   const cls    = character.class  || 'Chronicler';
   const race   = character.race   || 'Human';
@@ -631,17 +663,7 @@ let ccSelectedClass  = 'Chronicler';
 let ccSelectedRace   = 'Human';
 let ccSelectedGender = 'Man';
 
-function updateCcPreview() {
-  const preview = document.getElementById('cc-portrait-preview');
-  if (!preview) return;
-  const name = document.getElementById('cc-name').value.trim() || 'Adventurer';
-  preview.innerHTML = generatePortraitSVG(
-    { name, class: ccSelectedClass, race: ccSelectedRace, gender: ccSelectedGender },
-    'cc'
-  );
-  const label = document.getElementById('cc-preview-name-label');
-  if (label) label.textContent = name;
-}
+function updateCcPreview() { /* portrait now uploaded, not generated */ }
 
 function initCharCreate() {
   const screen = document.getElementById('char-create');
@@ -673,11 +695,25 @@ function initCharCreate() {
     });
   });
 
-  // Name input → live preview
-  document.getElementById('cc-name').addEventListener('input', updateCcPreview);
+  // Portrait file upload
+  let pendingPortrait = null;
+  document.getElementById('cc-portrait-file').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const dataUrl = await resizePortrait(file, 300);
+      pendingPortrait = dataUrl;
+      // Show preview
+      const circle = document.getElementById('cc-portrait-circle');
+      circle.innerHTML = `<img src="${dataUrl}" alt="Portrait preview" />`;
+      document.getElementById('cc-upload-hint').textContent = file.name;
+    } catch (err) {
+      document.getElementById('cc-upload-hint').textContent = 'Could not load image';
+    }
+  });
 
-  // Initial preview render
-  updateCcPreview();
+  // Stash pendingPortrait on begin
+  document.getElementById('cc-begin')._getPortrait = () => pendingPortrait;
 
   // Begin button
   document.getElementById('cc-begin').addEventListener('click', () => {
@@ -699,14 +735,19 @@ function initCharCreate() {
       if (val) arms[slots[i]] = val;
     });
 
-    state.character.name   = name;
-    state.character.class  = ccSelectedClass;
-    state.character.race   = ccSelectedRace;
-    state.character.gender = ccSelectedGender;
-    state.character.arms   = arms;
-    state.character.level  = 1;
-    state.character.xp     = 0;
-    state.characterCreated = true;
+    const portrait = document.getElementById('cc-begin')._getPortrait
+      ? document.getElementById('cc-begin')._getPortrait()
+      : null;
+
+    state.character.name    = name;
+    state.character.class   = ccSelectedClass;
+    state.character.race    = ccSelectedRace;
+    state.character.gender  = ccSelectedGender;
+    state.character.arms    = arms;
+    state.character.portrait = portrait || state.character.portrait || null;
+    state.character.level   = 1;
+    state.character.xp      = 0;
+    state.characterCreated  = true;
     saveState();
 
     // Fade out, then remove
@@ -919,6 +960,17 @@ function init() {
       document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
     });
+  });
+
+  // Character sheet — change portrait
+  document.getElementById('cs-portrait-file').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const dataUrl = await resizePortrait(file, 300);
+      applyPortrait(dataUrl);
+    } catch (err) { /* silently ignore */ }
+    e.target.value = '';
   });
 
   // FAB — create quest
