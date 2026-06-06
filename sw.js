@@ -1,4 +1,4 @@
-const CACHE = 'overworld-v14';
+const CACHE = 'overworld-v15';
 const ASSETS = [
   '/overworld/',
   '/overworld/index.html',
@@ -6,7 +6,10 @@ const ASSETS = [
   '/overworld/app.js',
   '/overworld/data.js',
   '/overworld/map.png',
-  '/overworld/manifest.json'
+  '/overworld/manifest.json',
+  '/overworld/icons/icon-192.png',
+  '/overworld/icons/icon-512.png',
+  '/overworld/icons/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', e => {
