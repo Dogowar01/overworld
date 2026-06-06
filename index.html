@@ -279,6 +279,27 @@
       <label class="cc-label">Your Name</label>
       <input class="cc-name-input" id="cc-name" type="text" placeholder="Enter your name…" maxlength="24" autocomplete="off" />
 
+      <label class="cc-label" style="margin-top:28px">Quest Areas</label>
+      <p class="cc-hint">Name up to four areas of your life you'll track quests in — health, career, creative work, anything. Blank ones are skipped.</p>
+      <div class="cc-arms-grid">
+        <div class="cc-arm-row-input" data-slot="creative">
+          <div class="cc-arm-swatch" style="background:var(--arm-creative)"></div>
+          <input class="cc-arm-input" type="text" placeholder="e.g. Creative" maxlength="20" />
+        </div>
+        <div class="cc-arm-row-input" data-slot="writing">
+          <div class="cc-arm-swatch" style="background:var(--arm-writing)"></div>
+          <input class="cc-arm-input" type="text" placeholder="e.g. Career" maxlength="20" />
+        </div>
+        <div class="cc-arm-row-input" data-slot="apps">
+          <div class="cc-arm-swatch" style="background:var(--arm-apps)"></div>
+          <input class="cc-arm-input" type="text" placeholder="e.g. Health" maxlength="20" />
+        </div>
+        <div class="cc-arm-row-input" data-slot="life">
+          <div class="cc-arm-swatch" style="background:var(--arm-life)"></div>
+          <input class="cc-arm-input" type="text" placeholder="e.g. Personal" maxlength="20" />
+        </div>
+      </div>
+
       <label class="cc-label" style="margin-top:28px">Race</label>
       <div class="cc-race-grid" id="cc-race-grid">
         <button class="cc-race-card active" data-race="Human">

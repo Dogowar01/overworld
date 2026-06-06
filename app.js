@@ -15,7 +15,15 @@ function xpToNextLevel(level) {
   return level * 100 + level * level * 10;
 }
 
-const ARM_LABELS  = { creative: 'Creative', writing: 'Writing', apps: 'Apps', life: 'Life' };
+function getArmLabels() {
+  const a = (state.character && state.character.arms) || {};
+  return {
+    creative: a.creative || 'Area 1',
+    writing:  a.writing  || 'Area 2',
+    apps:     a.apps     || 'Area 3',
+    life:     a.life     || 'Area 4'
+  };
+}
 const TIER_ICONS  = { common: '◦', rare: '◈', epic: '⬡', legendary: '★' };
 const ARM_VARS    = {
   creative: 'var(--arm-creative)',
@@ -61,35 +69,10 @@ function questProgress(quest) {
 // ── Render map
 function renderMap() {
   const container = document.getElementById('quest-nodes');
-  const roadsSvg  = document.getElementById('roads-svg');
   container.innerHTML = '';
-  roadsSvg.innerHTML  = '';
 
   const w = container.offsetWidth;
   const h = container.offsetHeight;
-
-  // Roads
-  state.quests.forEach(quest => {
-    quest.requires.forEach(reqId => {
-      const from = state.quests.find(q => q.id === reqId);
-      if (!from) return;
-      const x1 = (from.x / 100) * w, y1 = (from.y / 100) * h;
-      const x2 = (quest.x / 100) * w, y2 = (quest.y / 100) * h;
-      const mx = (x1 + x2) / 2 + (y2 - y1) * 0.15;
-      const my = (y1 + y2) / 2 - (x2 - x1) * 0.08;
-
-      const fromDone = !!state.quests.find(q => q.id === reqId)?.completedAt;
-      const toDone   = !!quest.completedAt;
-      const cls = fromDone && toDone ? 'complete'
-                : fromDone           ? 'available'
-                :                      'locked';
-
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`);
-      path.setAttribute('class', `road-line ${cls}`);
-      roadsSvg.appendChild(path);
-    });
-  });
 
   // Nodes
   state.quests.forEach(quest => {
@@ -228,7 +211,7 @@ function renderCharacter() {
   const tasksDone = state.quests.reduce((s, q) => s + q.tasksDone.filter(Boolean).length, 0);
   document.getElementById('stat-tasks').textContent  = tasksDone;
   const arms = [...new Set(state.quests.filter(q => !q.completedAt && questStatus(q) === 'available').map(q => q.arm))];
-  document.getElementById('stat-arm').textContent = arms.length ? arms.map(a => ARM_LABELS[a]).join(', ') : '—';
+  document.getElementById('stat-arm').textContent = arms.length ? arms.map(a => getArmLabels()[a]).join(', ') : '—';
 
   // Active quests
   const activeList   = document.getElementById('active-quest-list');
@@ -299,7 +282,7 @@ function openQuest(id) {
 
   document.getElementById('qp-tier').textContent  = quest.tier;
   document.getElementById('qp-tier').className    = `qp-tier-badge ${quest.tier}`;
-  document.getElementById('qp-arm').textContent   = ARM_LABELS[quest.arm] || quest.arm;
+  document.getElementById('qp-arm').textContent   = getArmLabels()[quest.arm] || quest.arm;
   document.getElementById('qp-title').textContent = quest.title;
   document.getElementById('qp-desc').textContent  = quest.description;
   document.getElementById('qp-xp-note').textContent = `${taskXP} XP per task · ${bonusXP} XP on completion`;
@@ -707,10 +690,20 @@ function initCharCreate() {
       return;
     }
 
+    // Collect arm labels
+    const armInputs = document.querySelectorAll('.cc-arm-input');
+    const slots = ['creative','writing','apps','life'];
+    const arms = {};
+    armInputs.forEach((inp, i) => {
+      const val = inp.value.trim();
+      if (val) arms[slots[i]] = val;
+    });
+
     state.character.name   = name;
     state.character.class  = ccSelectedClass;
     state.character.race   = ccSelectedRace;
     state.character.gender = ccSelectedGender;
+    state.character.arms   = arms;
     state.character.level  = 1;
     state.character.xp     = 0;
     state.characterCreated = true;
@@ -720,6 +713,7 @@ function initCharCreate() {
     screen.classList.add('fade-out');
     setTimeout(() => {
       screen.classList.add('hidden');
+      renderFilters();
       renderCharacter();
     }, 600);
   });
@@ -778,6 +772,12 @@ function openCreateSheet() {
       prereqList.appendChild(item);
     });
   }
+
+  // Update arm pill labels from user-defined arms
+  const armLabels = getArmLabels();
+  document.querySelectorAll('.cq-arm-pill').forEach(p => {
+    p.textContent = armLabels[p.dataset.arm] || p.dataset.arm;
+  });
 
   // Collapse the prereq list and reset toggle
   const prereqList2 = document.getElementById('cq-prereq-list');
@@ -860,6 +860,14 @@ function saveNewQuest() {
 }
 
 // ── Filters
+function renderFilters() {
+  const labels = getArmLabels();
+  ['creative','writing','apps','life'].forEach(slot => {
+    const btn = document.querySelector(`.arm-filter[data-arm="${slot}"]`);
+    if (btn) btn.textContent = labels[slot];
+  });
+}
+
 function setArmFilter(arm) {
   activeFilter = arm;
   document.querySelectorAll('.arm-filter').forEach(b => b.classList.toggle('active', b.dataset.arm === arm));
@@ -882,6 +890,7 @@ window.addEventListener('resize', () => {
 // ── Init
 function init() {
   recalcLevel();
+  renderFilters();
   renderMap();
   renderCharacter();
 

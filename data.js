@@ -9,6 +9,7 @@ const DEMO_DATA = {
     class: "Chronicler",
     race: "Human",
     gender: "Non-binary",
+    arms: { creative: "Creative", writing: "Writing", apps: "Apps", life: "Life" },
     level: 1,
     xp: 0,
     xpToNext: 110
