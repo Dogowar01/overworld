@@ -17,7 +17,7 @@ const DEMO_DATA = {
       description: "Every great journey begins with a single idea committed to paper. Define what you're building and why.",
       arm: "creative",
       tier: "common",
-      x: 40, y: 17,
+      x: 22, y: 22,
       tasks: [
         "Write a one-paragraph vision statement",
         "Define the core problem you're solving",
@@ -34,7 +34,7 @@ const DEMO_DATA = {
       description: "Sketch the overworld. Lay out the terrain, the quest nodes, the roads between them. This is the map before the map.",
       arm: "apps",
       tier: "rare",
-      x: 42, y: 41,
+      x: 30, y: 42,
       tasks: [
         "Design the parchment map layout",
         "Define quest node visual language",
@@ -52,7 +52,7 @@ const DEMO_DATA = {
       description: "A writer's life demands its own map. Plot the arc from first draft to finished manuscript — chapter by chapter.",
       arm: "writing",
       tier: "epic",
-      x: 72, y: 53,
+      x: 52, y: 24,
       tasks: [
         "Write chapter outline (all acts)",
         "Draft Act I",
@@ -71,7 +71,7 @@ const DEMO_DATA = {
       description: "Build the launch presence. Landing page, pricing, and the first public signal that something is coming.",
       arm: "creative",
       tier: "rare",
-      x: 32, y: 58,
+      x: 25, y: 60,
       tasks: [
         "Register the domain",
         "Build the landing page",
@@ -89,7 +89,7 @@ const DEMO_DATA = {
       description: "Run your actual life through the app for 30 days. No feature changes — just living inside it. See what breaks, what resonates, what you actually need.",
       arm: "life",
       tier: "legendary",
-      x: 66, y: 63,
+      x: 46, y: 70,
       tasks: [
         "Import real active quests",
         "Daily check-in for 30 days",
@@ -108,7 +108,7 @@ const DEMO_DATA = {
       description: "Plant the flag. Post the screenshot to the world and tell them what you're building. The adventure is now public.",
       arm: "creative",
       tier: "rare",
-      x: 35, y: 76,
+      x: 20, y: 78,
       tasks: [
         "Capture screenshot-worthy map state",
         "Write the announcement thread",
@@ -126,7 +126,7 @@ const DEMO_DATA = {
       description: "The hardest quest. Build the Phase 2 productivity layer — everything that turns a beautiful demo into a daily driver.",
       arm: "apps",
       tier: "legendary",
-      x: 50, y: 88,
+      x: 40, y: 88,
       tasks: [
         "Add / edit / delete quests in-app",
         "Drag-to-reposition nodes",
