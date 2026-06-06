@@ -7,6 +7,8 @@ const DEMO_DATA = {
   character: {
     name: "",
     class: "Chronicler",
+    race: "Human",
+    gender: "Non-binary",
     level: 1,
     xp: 0,
     xpToNext: 110

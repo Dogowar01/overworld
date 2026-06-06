@@ -1,4 +1,4 @@
-const CACHE = 'overworld-v7';
+const CACHE = 'overworld-v8';
 const ASSETS = [
   '/overworld/',
   '/overworld/index.html',

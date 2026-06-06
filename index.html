@@ -55,6 +55,7 @@
       <div class="header-right">
         <!-- Character portrait button -->
         <button id="char-portrait-btn" class="char-portrait-btn" aria-label="Open character sheet">
+          <div id="header-portrait-wrap" class="header-portrait-wrap"></div>
           <span class="portrait-glyph" id="char-glyph">✦</span>
           <div class="portrait-level-badge" id="portrait-level">3</div>
         </button>
@@ -114,7 +115,7 @@
         <div class="char-sheet-inner">
           <div class="cs-top">
             <div class="cs-portrait-wrap">
-              <div class="cs-portrait-frame">
+              <div class="cs-portrait-frame" id="cs-portrait-frame">
                 <span class="cs-portrait-glyph" id="cs-char-glyph">✦</span>
               </div>
             </div>
@@ -278,6 +279,47 @@
       <label class="cc-label">Your Name</label>
       <input class="cc-name-input" id="cc-name" type="text" placeholder="Enter your name…" maxlength="24" autocomplete="off" />
 
+      <label class="cc-label" style="margin-top:28px">Race</label>
+      <div class="cc-race-grid" id="cc-race-grid">
+        <button class="cc-race-card active" data-race="Human">
+          <span class="cc-race-icon">◎</span>
+          <span class="cc-race-name">Human</span>
+          <span class="cc-race-desc">Adaptable. Driven by ambition and heart.</span>
+        </button>
+        <button class="cc-race-card" data-race="Elf">
+          <span class="cc-race-icon">◇</span>
+          <span class="cc-race-name">Elf</span>
+          <span class="cc-race-desc">Ancient and perceptive. Sees patterns others miss.</span>
+        </button>
+        <button class="cc-race-card" data-race="Dwarf">
+          <span class="cc-race-icon">◆</span>
+          <span class="cc-race-name">Dwarf</span>
+          <span class="cc-race-desc">Steadfast. Masters their craft through sheer endurance.</span>
+        </button>
+        <button class="cc-race-card" data-race="Orc">
+          <span class="cc-race-icon">◉</span>
+          <span class="cc-race-name">Orc</span>
+          <span class="cc-race-desc">Bold and fierce. Charges forward without hesitation.</span>
+        </button>
+        <button class="cc-race-card" data-race="Halfling">
+          <span class="cc-race-icon">○</span>
+          <span class="cc-race-name">Halfling</span>
+          <span class="cc-race-desc">Resourceful and warm. Makes the most of every moment.</span>
+        </button>
+        <button class="cc-race-card" data-race="Tiefling">
+          <span class="cc-race-icon">✧</span>
+          <span class="cc-race-name">Tiefling</span>
+          <span class="cc-race-desc">Otherworldly. Carves their own path against all odds.</span>
+        </button>
+      </div>
+
+      <label class="cc-label" style="margin-top:28px">Identity</label>
+      <div class="cc-gender-row" id="cc-gender-row">
+        <button class="cc-gender-pill active" data-gender="Man">Man</button>
+        <button class="cc-gender-pill" data-gender="Woman">Woman</button>
+        <button class="cc-gender-pill" data-gender="Non-binary">Non-binary</button>
+      </div>
+
       <label class="cc-label" style="margin-top:28px">Choose a Class</label>
       <div class="cc-class-grid" id="cc-class-grid">
 
@@ -305,6 +347,14 @@
           <span class="cc-class-desc">Explorer of paths. Finds the way forward when none exists.</span>
         </button>
 
+      </div>
+
+      <div class="cc-preview-row">
+        <div class="cc-portrait-preview" id="cc-portrait-preview"></div>
+        <div class="cc-preview-info">
+          <span class="cc-preview-name" id="cc-preview-name-label">Your portrait</span>
+          <span class="cc-preview-sub">Updates as you choose</span>
+        </div>
       </div>
 
       <button class="cc-begin-btn" id="cc-begin">Enter the World</button>

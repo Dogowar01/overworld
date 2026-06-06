@@ -189,12 +189,25 @@ function renderCharacter() {
   const c = state.character;
   const glyph = CLASS_GLYPH[c.class] || '✦';
 
-  // Header portrait button
-  document.getElementById('char-glyph').textContent    = glyph;
+  // Header portrait
   document.getElementById('portrait-level').textContent = c.level;
+  const headerPortrait = document.getElementById('header-portrait-wrap');
+  if (state.characterCreated && c.race) {
+    document.getElementById('char-glyph').style.display = 'none';
+    headerPortrait.innerHTML = generatePortraitSVG(c, 'hdr');
+  } else {
+    document.getElementById('char-glyph').style.display = '';
+    headerPortrait.innerHTML = '';
+  }
 
-  // Sheet
-  document.getElementById('cs-char-glyph').textContent  = glyph;
+  // Sheet portrait
+  const portraitFrame = document.getElementById('cs-portrait-frame');
+  if (state.characterCreated && c.race) {
+    portraitFrame.innerHTML = generatePortraitSVG(c, 'sheet');
+  } else {
+    portraitFrame.innerHTML = `<span class="cs-portrait-glyph">${glyph}</span>`;
+  }
+
   document.getElementById('cs-char-class').textContent  = c.class;
   document.getElementById('cs-char-name').textContent   = c.name;
   document.getElementById('cs-char-level').textContent  = c.level;
@@ -439,23 +452,249 @@ function showLevelUp(level) {
   overlay._timer = setTimeout(dismiss, 3000);
 }
 
+// ── Portrait generator
+function generatePortraitSVG(character, uid) {
+  const cls    = character.class  || 'Chronicler';
+  const race   = character.race   || 'Human';
+  const gender = character.gender || 'Non-binary';
+  const name   = character.name   || '';
+  const id     = uid || 'p';
+
+  const classColor = { Chronicler:'#d4a43a', Architect:'#4ab8b8', Artificer:'#9b72cf', Wanderer:'#d4706a' }[cls] || '#d4a43a';
+
+  // Deterministic skin + hair from name
+  const hash = name.split('').reduce((a, c) => ((a * 31) + c.charCodeAt(0)) & 0xffffff, 7);
+  const SKINS = ['#fde8c8','#f5cfa0','#e8b87a','#d4956a','#c07848','#8d5524','#5c3317','#3d1f0a'];
+  const HAIRS = ['#1a0a00','#3d1f0a','#5c2e10','#8b5a2b','#b4843a','#d4b86a','#c8c8c8','#707070'];
+  const skin  = SKINS[hash % SKINS.length];
+  const hair  = HAIRS[(hash >> 3) % HAIRS.length];
+  const glyph = CLASS_GLYPH[cls] || '✦';
+
+  const isWoman = gender === 'Woman';
+  const isMan   = gender === 'Man';
+
+  // Head geometry
+  const hcx = 50, hcy = 44;
+  const hrx = isMan ? 21 : isWoman ? 19 : 20;
+  const hry = isMan ? 24 : isWoman ? 26 : 25;
+
+  // Shoulder width
+  const sw = isMan ? 42 : isWoman ? 32 : 36;
+
+  // ── Hair
+  const hairTop = hcy - hry;
+  let hairSVG = '';
+  if (isWoman) {
+    hairSVG = `
+      <path d="M${hcx-hrx-4},${hcy+4} Q${hcx-hrx-10},${hairTop+6} ${hcx},${hairTop-4}
+               Q${hcx+hrx+10},${hairTop+6} ${hcx+hrx+4},${hcy+4}
+               Q${hcx+hrx+8},${hcy+20} ${hcx+hrx+2},${hcy+34}" fill="${hair}"/>
+      <path d="M${hcx-hrx-4},${hcy+4} Q${hcx-hrx-8},${hcy+20} ${hcx-hrx-2},${hcy+34}" fill="${hair}"/>
+    `;
+  } else if (isMan) {
+    hairSVG = `
+      <ellipse cx="${hcx}" cy="${hairTop+5}" rx="${hrx+2}" ry="10" fill="${hair}"/>
+      <path d="M${hcx-hrx-2},${hcy-4} Q${hcx-hrx-6},${hairTop+2} ${hcx-8},${hairTop-1}
+               Q${hcx+8},${hairTop-1} ${hcx+hrx+6},${hairTop+2} L${hcx+hrx+2},${hcy-4}" fill="${hair}"/>
+    `;
+  } else {
+    // Medium, swept
+    hairSVG = `
+      <path d="M${hcx-hrx-3},${hcy} Q${hcx-hrx-8},${hairTop+4} ${hcx},${hairTop-5}
+               Q${hcx+hrx+8},${hairTop+4} ${hcx+hrx+3},${hcy}
+               Q${hcx+hrx+6},${hcy+14} ${hcx+hrx},${hcy+26}" fill="${hair}"/>
+    `;
+  }
+
+  // ── Ears (race-specific)
+  let earsSVG = '';
+  const earY = hcy - 2;
+  if (race === 'Elf' || race === 'Tiefling') {
+    earsSVG = `
+      <path d="M${hcx-hrx+1},${earY-5} L${hcx-hrx-9},${earY-16} L${hcx-hrx-3},${earY+3} Z" fill="${skin}"/>
+      <path d="M${hcx+hrx-1},${earY-5} L${hcx+hrx+9},${earY-16} L${hcx+hrx+3},${earY+3} Z" fill="${skin}"/>
+    `;
+  } else if (race === 'Halfling') {
+    earsSVG = `
+      <ellipse cx="${hcx-hrx-5}" cy="${earY}" rx="7" ry="9" fill="${skin}"/>
+      <ellipse cx="${hcx+hrx+5}" cy="${earY}" rx="7" ry="9" fill="${skin}"/>
+    `;
+  } else {
+    earsSVG = `
+      <ellipse cx="${hcx-hrx-3}" cy="${earY}" rx="4" ry="5" fill="${skin}"/>
+      <ellipse cx="${hcx+hrx+3}" cy="${earY}" rx="4" ry="5" fill="${skin}"/>
+    `;
+  }
+
+  // ── Special racial features
+  let specialSVG = '';
+  if (race === 'Tiefling') {
+    specialSVG = `
+      <path d="M${hcx-10},${hairTop+3} Q${hcx-16},${hairTop-6} ${hcx-9},${hairTop-15}"
+            stroke="${hair}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <path d="M${hcx+10},${hairTop+3} Q${hcx+16},${hairTop-6} ${hcx+9},${hairTop-15}"
+            stroke="${hair}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    `;
+  } else if (race === 'Orc') {
+    // Subtle lower tusks
+    specialSVG = `
+      <path d="M${hcx-6},${hcy+hry-8} L${hcx-8},${hcy+hry}" stroke="${skin}" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
+      <path d="M${hcx+6},${hcy+hry-8} L${hcx+8},${hcy+hry}" stroke="${skin}" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
+    `;
+  } else if (race === 'Dwarf') {
+    const beardTop = hcy + hry - 6;
+    specialSVG = `
+      <path d="M${hcx-hrx+4},${beardTop}
+               Q${hcx-hrx+2},${beardTop+14} ${hcx},${beardTop+20}
+               Q${hcx+hrx-2},${beardTop+14} ${hcx+hrx-4},${beardTop} Z"
+            fill="${hair}" opacity="0.88"/>
+    `;
+  }
+
+  // ── Eyes
+  const eyeY  = hcy - 3;
+  const eyeLX = hcx - 7, eyeRX = hcx + 7;
+  const eyesSVG = `
+    <ellipse cx="${eyeLX}" cy="${eyeY}" rx="3.2" ry="3.8" fill="#0f0c08"/>
+    <ellipse cx="${eyeRX}" cy="${eyeY}" rx="3.2" ry="3.8" fill="#0f0c08"/>
+    <ellipse cx="${eyeLX}" cy="${eyeY}" rx="1.6" ry="2.0" fill="${classColor}" opacity="0.85"/>
+    <ellipse cx="${eyeRX}" cy="${eyeY}" rx="1.6" ry="2.0" fill="${classColor}" opacity="0.85"/>
+    <circle  cx="${eyeLX-0.8}" cy="${eyeY-0.8}" r="0.7" fill="rgba(255,255,255,0.5)"/>
+    <circle  cx="${eyeRX-0.8}" cy="${eyeY-0.8}" r="0.7" fill="rgba(255,255,255,0.5)"/>
+  `;
+
+  // ── Subtle nose
+  const noseSVG = `
+    <path d="M${hcx-2},${hcy+5} Q${hcx},${hcy+9} ${hcx+2},${hcy+5}"
+          stroke="${skin}" stroke-width="1.8" fill="none"
+          stroke-linecap="round" opacity="0.45"/>
+  `;
+
+  // ── Lips (subtle)
+  const lipSVG = `
+    <path d="M${hcx-5},${hcy+12} Q${hcx},${hcy+15} ${hcx+5},${hcy+12}"
+          stroke="${skin}" stroke-width="1.5" fill="none"
+          stroke-linecap="round" opacity="0.35"/>
+  `;
+
+  // ── Decorative corner ornaments on the ring
+  const orn = `
+    <circle cx="50" cy="3"  r="1.5" fill="${classColor}" opacity="0.7"/>
+    <circle cx="50" cy="97" r="1.5" fill="${classColor}" opacity="0.7"/>
+    <circle cx="3"  cy="50" r="1.5" fill="${classColor}" opacity="0.7"/>
+    <circle cx="97" cy="50" r="1.5" fill="${classColor}" opacity="0.7"/>
+  `;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <clipPath id="pc-${id}"><circle cx="50" cy="50" r="49"/></clipPath>
+    <radialGradient id="pbg-${id}" cx="50%" cy="35%" r="65%">
+      <stop offset="0%"   stop-color="#302418"/>
+      <stop offset="100%" stop-color="#0d0a06"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="50" cy="50" r="49" fill="url(#pbg-${id})"/>
+
+  <g clip-path="url(#pc-${id})">
+    <!-- Shoulders -->
+    <path d="M${50-sw},100 Q${50-sw+8},76 ${hcx-14},${hcy+hry+16}
+             L${hcx+14},${hcy+hry+16} Q${50+sw-8},76 ${50+sw},100 Z"
+          fill="${skin}" opacity="0.9"/>
+
+    <!-- Neck -->
+    <rect x="${hcx-7}" y="${hcy+hry-5}" width="14" height="20" rx="5" fill="${skin}"/>
+
+    <!-- Hair (behind head) -->
+    ${hairSVG}
+
+    <!-- Ears -->
+    ${earsSVG}
+
+    <!-- Head -->
+    <ellipse cx="${hcx}" cy="${hcy}" rx="${hrx}" ry="${hry}" fill="${skin}"/>
+
+    <!-- Racial special features -->
+    ${specialSVG}
+
+    <!-- Eyes -->
+    ${eyesSVG}
+
+    <!-- Nose -->
+    ${noseSVG}
+
+    <!-- Lips -->
+    ${lipSVG}
+
+    <!-- Class badge -->
+    <circle cx="50" cy="89" r="8" fill="#0d0a06" stroke="${classColor}" stroke-width="1.5" opacity="0.95"/>
+    <text x="50" y="93" text-anchor="middle" fill="${classColor}"
+          font-size="9" font-family="Georgia, serif">${glyph}</text>
+  </g>
+
+  <!-- Rings -->
+  <circle cx="50" cy="50" r="48" fill="none" stroke="${classColor}" stroke-width="2"   opacity="0.55"/>
+  <circle cx="50" cy="50" r="44" fill="none" stroke="${classColor}" stroke-width="0.5" opacity="0.25"/>
+  ${orn}
+</svg>`;
+}
+
 // ── Character creation
 const CLASS_GLYPHS_MAP = {
   Chronicler: '✦', Architect: '⬡', Artificer: '◈', Wanderer: '◎'
 };
 
-let ccSelectedClass = 'Chronicler';
+let ccSelectedClass  = 'Chronicler';
+let ccSelectedRace   = 'Human';
+let ccSelectedGender = 'Man';
+
+function updateCcPreview() {
+  const preview = document.getElementById('cc-portrait-preview');
+  if (!preview) return;
+  const name = document.getElementById('cc-name').value.trim() || 'Adventurer';
+  preview.innerHTML = generatePortraitSVG(
+    { name, class: ccSelectedClass, race: ccSelectedRace, gender: ccSelectedGender },
+    'cc'
+  );
+  const label = document.getElementById('cc-preview-name-label');
+  if (label) label.textContent = name;
+}
 
 function initCharCreate() {
   const screen = document.getElementById('char-create');
 
-  // Class card selection
+  // Race cards
+  document.querySelectorAll('.cc-race-card').forEach(card => {
+    card.addEventListener('click', () => {
+      ccSelectedRace = card.dataset.race;
+      document.querySelectorAll('.cc-race-card').forEach(c => c.classList.toggle('active', c === card));
+      updateCcPreview();
+    });
+  });
+
+  // Gender pills
+  document.querySelectorAll('.cc-gender-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      ccSelectedGender = pill.dataset.gender;
+      document.querySelectorAll('.cc-gender-pill').forEach(p => p.classList.toggle('active', p === pill));
+      updateCcPreview();
+    });
+  });
+
+  // Class cards
   document.querySelectorAll('.cc-class-card').forEach(card => {
     card.addEventListener('click', () => {
       ccSelectedClass = card.dataset.class;
       document.querySelectorAll('.cc-class-card').forEach(c => c.classList.toggle('active', c === card));
+      updateCcPreview();
     });
   });
+
+  // Name input → live preview
+  document.getElementById('cc-name').addEventListener('input', updateCcPreview);
+
+  // Initial preview render
+  updateCcPreview();
 
   // Begin button
   document.getElementById('cc-begin').addEventListener('click', () => {
@@ -468,10 +707,12 @@ function initCharCreate() {
       return;
     }
 
-    state.character.name  = name;
-    state.character.class = ccSelectedClass;
-    state.character.level = 1;
-    state.character.xp    = 0;
+    state.character.name   = name;
+    state.character.class  = ccSelectedClass;
+    state.character.race   = ccSelectedRace;
+    state.character.gender = ccSelectedGender;
+    state.character.level  = 1;
+    state.character.xp     = 0;
     state.characterCreated = true;
     saveState();
 
