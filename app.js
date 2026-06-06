@@ -440,7 +440,11 @@ function showLevelUp(level) {
 
 // Build a DiceBear lorelei URL from character data + variation index
 function buildPortraitUrl(character, variation) {
-  const seed = (character.name || 'adventurer') + (variation ? '-' + variation : '');
+  // Include gender in seed so Man/Woman/Non-binary hash differently.
+  // Multiply variation by a large prime so adjacent seeds look totally different.
+  const genderTag = { Man: 'M', Woman: 'W', 'Non-binary': 'N' }[character.gender] || 'X';
+  const varSuffix = variation ? String(variation * 7411) : '';
+  const seed = (character.name || 'adventurer') + genderTag + varSuffix;
   const h    = seed.split('').reduce((a, c) => ((a * 31) + c.charCodeAt(0)) & 0xffffff, 7);
 
   // Class → two-tone gradient background (dark plum base + class accent)
@@ -720,6 +724,8 @@ async function updateCcPreview(immediate) {
   const run = async () => {
     const circle = document.getElementById('cc-portrait-circle');
     if (!circle) return;
+    // Clear old image so the user sees the shimmer while fetching
+    circle.innerHTML = `<span class="cc-portrait-placeholder">✦</span>`;
     circle.classList.add('loading');
 
     const char = {
@@ -882,7 +888,7 @@ function openCreateSheet() {
       item.innerHTML = `
         <div class="cq-prereq-check"></div>
         <span class="cq-prereq-name">${q.title}</span>
-        <span class="cq-prereq-arm">${ARM_LABELS[q.arm] || q.arm}</span>
+        <span class="cq-prereq-arm">${getArmLabels()[q.arm] || q.arm}</span>
       `;
       item.addEventListener('click', () => {
         if (cqSelectedPrereqs.has(q.id)) {

@@ -10,6 +10,7 @@ const DEMO_DATA = {
     race: "Human",
     gender: "Non-binary",
     arms: { creative: "Creative", writing: "Writing", apps: "Apps", life: "Life" },
+    portrait: null,
     level: 1,
     xp: 0,
     xpToNext: 110
@@ -28,9 +29,9 @@ const DEMO_DATA = {
         "Define the core problem you're solving",
         "Name the project"
       ],
-      tasksDone: [true, true, true],
+      tasksDone: [false, false, false],
       requires: [],
-      completedAt: "2026-05-10T09:00:00Z",
+      completedAt: null,
       createdAt: "2026-05-01T00:00:00Z"
     },
     {
@@ -46,8 +47,8 @@ const DEMO_DATA = {
         "Wire up terrain textures",
         "Build dependency connector lines"
       ],
-      tasksDone: [true, true, true, false],
-      requires: ["q1"],
+      tasksDone: [false, false, false, false],
+      requires: [],
       completedAt: null,
       createdAt: "2026-05-12T00:00:00Z"
     },
@@ -65,8 +66,8 @@ const DEMO_DATA = {
         "Draft Act III",
         "First revision pass"
       ],
-      tasksDone: [true, false, false, false, false],
-      requires: ["q1"],
+      tasksDone: [false, false, false, false, false],
+      requires: [],
       completedAt: null,
       createdAt: "2026-05-15T00:00:00Z"
     },
@@ -84,7 +85,7 @@ const DEMO_DATA = {
         "Write launch copy"
       ],
       tasksDone: [false, false, false, false],
-      requires: ["q2"],
+      requires: [],
       completedAt: null,
       createdAt: "2026-05-20T00:00:00Z"
     },
@@ -103,7 +104,7 @@ const DEMO_DATA = {
         "Write a retrospective"
       ],
       tasksDone: [false, false, false, false, false],
-      requires: ["q2"],
+      requires: [],
       completedAt: null,
       createdAt: "2026-05-20T00:00:00Z"
     },
@@ -121,7 +122,7 @@ const DEMO_DATA = {
         "Post to relevant communities"
       ],
       tasksDone: [false, false, false, false],
-      requires: ["q4"],
+      requires: [],
       completedAt: null,
       createdAt: "2026-05-22T00:00:00Z"
     },
@@ -140,24 +141,13 @@ const DEMO_DATA = {
         "JSON export/import"
       ],
       tasksDone: [false, false, false, false, false],
-      requires: ["q5"],
+      requires: [],
       completedAt: null,
       createdAt: "2026-05-22T00:00:00Z"
     }
   ],
 
-  achievements: [
-    { id: "first-blood", title: "First Blood", desc: "Completed your first quest", unlockedAt: "2026-05-10T09:00:00Z" }
-  ],
+  achievements: [],
 
-  chronicle: [
-    {
-      questId: "q1",
-      title: "The First Spark",
-      arm: "creative",
-      tier: "common",
-      completedAt: "2026-05-10T09:00:00Z",
-      note: "The idea has a name. The map has a first pin."
-    }
-  ]
+  chronicle: []
 };
