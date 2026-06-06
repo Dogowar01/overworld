@@ -74,6 +74,7 @@ let openQuestId = null;
 let cqSelectedArm  = 'creative';
 let cqSelectedTier = 'common';
 let cqSelectedPrereqs = new Set();
+let editingQuestId = null; // null = create mode, string id = edit mode
 
 // Drag state
 let dragState = null; // { questId, node, offsetX, offsetY, moved }
@@ -361,10 +362,53 @@ function openQuest(id) {
   const reqEl = document.getElementById('qp-requires');
   if (quest.requires.length) {
     const names = quest.requires.map(rid => state.quests.find(q => q.id === rid)?.title || rid);
-    reqEl.innerHTML = `<strong>Requires</strong>${names.join(', ')}`;
+    reqEl.innerHTML = `<strong>Requires:</strong> ${names.join(', ')}`;
   } else {
     reqEl.innerHTML = '';
   }
+
+  // Action buttons
+  const actionsEl = document.getElementById('qp-actions');
+  actionsEl.innerHTML = '';
+
+  if (status === 'complete') {
+    const reopenBtn = document.createElement('button');
+    reopenBtn.className = 'qp-action-btn qp-reopen-btn';
+    reopenBtn.textContent = 'Reopen Quest';
+    reopenBtn.addEventListener('click', () => reopenQuest(id));
+    actionsEl.appendChild(reopenBtn);
+  } else {
+    const editBtn = document.createElement('button');
+    editBtn.className = 'qp-action-btn qp-edit-btn';
+    editBtn.textContent = 'Edit Quest';
+    editBtn.addEventListener('click', () => {
+      closeQuest();
+      setTimeout(() => openCreateSheet(quest), 380);
+    });
+    actionsEl.appendChild(editBtn);
+  }
+
+  // Delete button — double-tap to confirm
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'qp-action-btn qp-delete-btn';
+  deleteBtn.textContent = 'Delete';
+  let deleteArmed = false, deleteTimer = null;
+  deleteBtn.addEventListener('click', () => {
+    if (deleteArmed) {
+      clearTimeout(deleteTimer);
+      deleteQuestConfirmed(id);
+    } else {
+      deleteArmed = true;
+      deleteBtn.textContent = 'Tap again to confirm';
+      deleteBtn.classList.add('armed');
+      deleteTimer = setTimeout(() => {
+        deleteArmed = false;
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.classList.remove('armed');
+      }, 2600);
+    }
+  });
+  actionsEl.appendChild(deleteBtn);
 
   const panel = document.getElementById('quest-panel');
   panel.classList.remove('hidden');
@@ -384,7 +428,7 @@ function closeQuest() {
 // ── Toggle task
 function toggleTask(questId, idx) {
   const quest = state.quests.find(q => q.id === questId);
-  if (!quest || questStatus(quest) === 'locked') return;
+  if (!quest || quest.completedAt || questStatus(quest) === 'locked') return;
 
   const wasDone = quest.tasksDone[idx];
   quest.tasksDone[idx] = !wasDone;
@@ -447,6 +491,55 @@ function completeQuest(quest) {
     showXPToast(`Quest complete! +${bonus} XP`);
     shimmerNode(quest.id);
   }, 300);
+}
+
+// ── Reopen a completed quest (undoes completion + XP)
+function reopenQuest(questId) {
+  const quest = state.quests.find(q => q.id === questId);
+  if (!quest || !quest.completedAt) return;
+
+  const bonus   = XP.quest[quest.tier];
+  const taskXP  = XP.task[quest.tier] * quest.tasks.length;
+  state.character.xp = Math.max(0, state.character.xp - bonus - taskXP);
+  recalcLevel();
+
+  quest.completedAt = null;
+  quest.tasksDone   = quest.tasks.map(() => false);
+
+  // Remove most-recent chronicle entry for this quest
+  const idx = state.chronicle.map(e => e.questId).lastIndexOf(questId);
+  if (idx >= 0) state.chronicle.splice(idx, 1);
+
+  saveState();
+  renderMap();
+  renderCharacter();
+  openQuest(questId);
+}
+
+// ── Permanently delete a quest (called after double-tap confirm)
+function deleteQuestConfirmed(questId) {
+  const quest = state.quests.find(q => q.id === questId);
+  if (!quest) return;
+
+  // Deduct any XP already earned from this quest
+  if (quest.completedAt) {
+    const xp = XP.quest[quest.tier] + XP.task[quest.tier] * quest.tasks.length;
+    state.character.xp = Math.max(0, state.character.xp - xp);
+    state.chronicle = state.chronicle.filter(e => e.questId !== questId);
+  } else {
+    const taskXP = XP.task[quest.tier] * quest.tasksDone.filter(Boolean).length;
+    state.character.xp = Math.max(0, state.character.xp - taskXP);
+  }
+  recalcLevel();
+
+  // Remove quest, and drop it from any other quest's requires list
+  state.quests = state.quests.filter(q => q.id !== questId);
+  state.quests.forEach(q => { q.requires = q.requires.filter(id => id !== questId); });
+
+  saveState();
+  closeQuest();
+  renderMap();
+  renderCharacter();
 }
 
 function shimmerNode(questId) {
@@ -980,18 +1073,25 @@ function initCharCreate() {
   });
 }
 
-// ── Create quest sheet
-function openCreateSheet() {
-  // Reset form state
-  cqSelectedArm    = 'creative';
-  cqSelectedTier   = 'common';
-  cqSelectedPrereqs = new Set();
+// ── Create / edit quest sheet
+// Pass a quest object to pre-fill for editing; omit for create mode.
+function openCreateSheet(prefillQuest) {
+  editingQuestId    = prefillQuest ? prefillQuest.id : null;
+  cqSelectedArm     = prefillQuest ? prefillQuest.arm  : 'creative';
+  cqSelectedTier    = prefillQuest ? prefillQuest.tier : 'common';
+  cqSelectedPrereqs = new Set(prefillQuest ? prefillQuest.requires : []);
 
-  document.getElementById('cq-title').value = '';
-  document.getElementById('cq-desc').value  = '';
+  document.getElementById('cq-title').value = prefillQuest ? prefillQuest.title : '';
+  document.getElementById('cq-desc').value  = prefillQuest ? (prefillQuest.description || '') : '';
+
+  // Heading & save button
+  document.querySelector('.cq-heading').textContent      = prefillQuest ? 'Edit Quest'    : 'New Quest';
+  document.getElementById('cq-save').textContent         = prefillQuest ? 'Save Changes'  : 'Create Quest';
 
   // Arm pills
+  const armLabels = getArmLabels();
   document.querySelectorAll('.cq-arm-pill').forEach(p => {
+    p.textContent = armLabels[p.dataset.arm] || p.dataset.arm;
     p.classList.toggle('active', p.dataset.arm === cqSelectedArm);
   });
 
@@ -1000,26 +1100,31 @@ function openCreateSheet() {
     c.classList.toggle('active', c.dataset.tier === cqSelectedTier);
   });
 
-  // Seed one task row
+  // Task rows — seed with existing tasks or one blank row
   const taskList = document.getElementById('cq-task-list');
   taskList.innerHTML = '';
-  addCqTaskRow(taskList);
+  if (prefillQuest && prefillQuest.tasks.length) {
+    prefillQuest.tasks.forEach(t => addCqTaskRow(taskList, t));
+  } else {
+    addCqTaskRow(taskList);
+  }
 
-  // Prerequisites
+  // Prerequisites — exclude the quest being edited from its own prereq list
   const prereqList = document.getElementById('cq-prereq-list');
   prereqList.innerHTML = '';
-  const available = state.quests;
+  const available = state.quests.filter(q => q.id !== editingQuestId);
   if (!available.length) {
-    prereqList.innerHTML = '<div class="cq-prereq-empty">No quests yet</div>';
+    prereqList.innerHTML = '<div class="cq-prereq-empty">No other quests yet</div>';
   } else {
     available.forEach(q => {
       const item = document.createElement('div');
       item.className = 'cq-prereq-item';
       item.dataset.id = q.id;
+      if (cqSelectedPrereqs.has(q.id)) item.classList.add('selected');
       item.innerHTML = `
         <div class="cq-prereq-check"></div>
         <span class="cq-prereq-name">${q.title}</span>
-        <span class="cq-prereq-arm">${getArmLabels()[q.arm] || q.arm}</span>
+        <span class="cq-prereq-arm">${armLabels[q.arm] || q.arm}</span>
       `;
       item.addEventListener('click', () => {
         if (cqSelectedPrereqs.has(q.id)) {
@@ -1034,16 +1139,9 @@ function openCreateSheet() {
     });
   }
 
-  // Update arm pill labels from user-defined arms
-  const armLabels = getArmLabels();
-  document.querySelectorAll('.cq-arm-pill').forEach(p => {
-    p.textContent = armLabels[p.dataset.arm] || p.dataset.arm;
-  });
-
-  // Collapse the prereq list and reset toggle
-  const prereqList2 = document.getElementById('cq-prereq-list');
+  // Collapse prereq section
+  prereqList.classList.add('hidden');
   const toggle = document.getElementById('cq-link-toggle');
-  prereqList2.classList.add('hidden');
   toggle.classList.remove('open');
   toggle.querySelector('.cq-link-toggle-icon').textContent = '+';
 
@@ -1053,24 +1151,24 @@ function openCreateSheet() {
 }
 
 function closeCreateSheet() {
+  editingQuestId = null;
   const sheet = document.getElementById('create-sheet');
   sheet.classList.remove('open');
   setTimeout(() => sheet.classList.add('hidden'), 350);
 }
 
-function addCqTaskRow(list) {
+function addCqTaskRow(list, value) {
   const row = document.createElement('div');
   row.className = 'cq-task-row';
   row.innerHTML = `
     <input class="cq-task-input" type="text" placeholder="Describe this task…" maxlength="120" />
     <button class="cq-task-remove" aria-label="Remove task">×</button>
   `;
-  row.querySelector('.cq-task-remove').addEventListener('click', () => {
-    row.remove();
-  });
+  if (value) row.querySelector('.cq-task-input').value = value;
+  row.querySelector('.cq-task-remove').addEventListener('click', () => row.remove());
   list.appendChild(row);
-  // Focus new input
-  setTimeout(() => row.querySelector('.cq-task-input').focus(), 50);
+  // Only auto-focus on new blank rows, not prefilled ones
+  if (!value) setTimeout(() => row.querySelector('.cq-task-input').focus(), 50);
 }
 
 function saveNewQuest() {
@@ -1086,38 +1184,61 @@ function saveNewQuest() {
   const tasks = [...document.querySelectorAll('.cq-task-input')]
     .map(i => i.value.trim()).filter(Boolean);
 
-  // Pick a spawn position: slightly random, away from the centre
-  const x = 20 + Math.random() * 55;
-  const y = 25 + Math.random() * 55;
-
-  const newQuest = {
-    id:          genId(),
-    title,
-    description: desc || 'No description yet.',
-    arm:         cqSelectedArm,
-    tier:        cqSelectedTier,
-    x:           Math.round(x * 10) / 10,
-    y:           Math.round(y * 10) / 10,
-    tasks:       tasks.length ? tasks : ['Complete this quest'],
-    tasksDone:   (tasks.length ? tasks : ['Complete this quest']).map(() => false),
-    requires:    [...cqSelectedPrereqs],
-    completedAt: null,
-    createdAt:   new Date().toISOString()
-  };
-
-  state.quests.push(newQuest);
-  saveState();
-  renderMap();
-  renderCharacter();
-  closeCreateSheet();
-  // Brief highlight after sheet closes
-  setTimeout(() => {
-    const node = document.querySelector(`.quest-node[data-id="${newQuest.id}"]`);
-    if (node) {
-      node.classList.add('selected');
-      setTimeout(() => openQuest(newQuest.id), 100);
+  if (editingQuestId) {
+    // ── Edit existing quest
+    const quest = state.quests.find(q => q.id === editingQuestId);
+    const savedId = editingQuestId;
+    if (quest) {
+      quest.title       = title;
+      quest.description = desc || 'No description yet.';
+      quest.arm         = cqSelectedArm;
+      quest.tier        = cqSelectedTier;
+      quest.requires    = [...cqSelectedPrereqs];
+      // Preserve tasksDone state at matching indices
+      const newTasks    = tasks.length ? tasks : ['Complete this quest'];
+      quest.tasksDone   = newTasks.map((_, i) => quest.tasksDone[i] || false);
+      quest.tasks       = newTasks;
+      // Sync chronicle entry title/arm/tier if it exists
+      const entry = state.chronicle.find(e => e.questId === savedId);
+      if (entry) { entry.title = title; entry.arm = cqSelectedArm; entry.tier = cqSelectedTier; }
     }
-  }, 400);
+    saveState();
+    renderMap();
+    renderCharacter();
+    closeCreateSheet();
+    setTimeout(() => openQuest(savedId), 400);
+
+  } else {
+    // ── Create new quest
+    const x = 20 + Math.random() * 55;
+    const y = 25 + Math.random() * 55;
+    const newQuest = {
+      id:          genId(),
+      title,
+      description: desc || 'No description yet.',
+      arm:         cqSelectedArm,
+      tier:        cqSelectedTier,
+      x:           Math.round(x * 10) / 10,
+      y:           Math.round(y * 10) / 10,
+      tasks:       tasks.length ? tasks : ['Complete this quest'],
+      tasksDone:   (tasks.length ? tasks : ['Complete this quest']).map(() => false),
+      requires:    [...cqSelectedPrereqs],
+      completedAt: null,
+      createdAt:   new Date().toISOString()
+    };
+    state.quests.push(newQuest);
+    saveState();
+    renderMap();
+    renderCharacter();
+    closeCreateSheet();
+    setTimeout(() => {
+      const node = document.querySelector(`.quest-node[data-id="${newQuest.id}"]`);
+      if (node) {
+        node.classList.add('selected');
+        setTimeout(() => openQuest(newQuest.id), 100);
+      }
+    }, 400);
+  }
 }
 
 // ── Chronicle
@@ -1210,9 +1331,19 @@ function showMap() {
 // ── Filters
 function renderFilters() {
   const labels = getArmLabels();
+  const arms   = state.character.arms || {};
   ['creative','writing','apps','life'].forEach(slot => {
     const btn = document.querySelector(`.arm-filter[data-arm="${slot}"]`);
-    if (btn) btn.textContent = labels[slot];
+    if (!btn) return;
+    btn.textContent = labels[slot];
+    // Hide filter pills for arms the user left blank at character creation
+    const defined = !state.characterCreated || (arms[slot] && arms[slot].trim());
+    btn.style.display = defined ? '' : 'none';
+    if (!defined && activeFilter === slot) {
+      activeFilter = 'all';
+      document.querySelectorAll('.arm-filter').forEach(b =>
+        b.classList.toggle('active', b.dataset.arm === 'all'));
+    }
   });
 }
 

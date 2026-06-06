@@ -1023,6 +1023,40 @@ body {
   margin-bottom: 4px;
 }
 
+/* ── Quest panel action buttons ── */
+.qp-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.qp-action-btn {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  border: 1px solid var(--border-mid);
+  background: var(--bg-raised);
+  color: var(--ink-dim);
+}
+.qp-action-btn:active { transform: scale(0.97); }
+.qp-edit-btn:hover    { color: var(--arm-creative); border-color: var(--arm-creative); }
+.qp-reopen-btn        { color: var(--arm-apps); border-color: var(--arm-apps); }
+.qp-reopen-btn:hover  { background: rgba(74,200,192,0.08); }
+.qp-delete-btn        { flex: 0 0 auto; color: var(--ink-faint); }
+.qp-delete-btn:hover  { color: var(--arm-life); border-color: var(--arm-life); }
+.qp-delete-btn.armed  {
+  color: var(--arm-life);
+  border-color: var(--arm-life);
+  background: rgba(212,112,106,0.1);
+  font-size: 12px;
+}
+
 /* ── XP toast ── */
 .xp-toast {
   position: fixed;
