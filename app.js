@@ -555,8 +555,8 @@ function generatePortraitSVG(character, uid) {
   const eyeY  = hcy - 3;
   const eyeLX = hcx - 7, eyeRX = hcx + 7;
   const eyesSVG = `
-    <ellipse cx="${eyeLX}" cy="${eyeY}" rx="3.2" ry="3.8" fill="#0f0c08"/>
-    <ellipse cx="${eyeRX}" cy="${eyeY}" rx="3.2" ry="3.8" fill="#0f0c08"/>
+    <ellipse cx="${eyeLX}" cy="${eyeY}" rx="3.2" ry="3.8" fill="#0a0614"/>
+    <ellipse cx="${eyeRX}" cy="${eyeY}" rx="3.2" ry="3.8" fill="#0a0614"/>
     <ellipse cx="${eyeLX}" cy="${eyeY}" rx="1.6" ry="2.0" fill="${classColor}" opacity="0.85"/>
     <ellipse cx="${eyeRX}" cy="${eyeY}" rx="1.6" ry="2.0" fill="${classColor}" opacity="0.85"/>
     <circle  cx="${eyeLX-0.8}" cy="${eyeY-0.8}" r="0.7" fill="rgba(255,255,255,0.5)"/>
@@ -589,8 +589,8 @@ function generatePortraitSVG(character, uid) {
   <defs>
     <clipPath id="pc-${id}"><circle cx="50" cy="50" r="49"/></clipPath>
     <radialGradient id="pbg-${id}" cx="50%" cy="35%" r="65%">
-      <stop offset="0%"   stop-color="#302418"/>
-      <stop offset="100%" stop-color="#0d0a06"/>
+      <stop offset="0%"   stop-color="#2a1840"/>
+      <stop offset="100%" stop-color="#0a0614"/>
     </radialGradient>
   </defs>
 
@@ -627,7 +627,7 @@ function generatePortraitSVG(character, uid) {
     ${lipSVG}
 
     <!-- Class badge -->
-    <circle cx="50" cy="89" r="8" fill="#0d0a06" stroke="${classColor}" stroke-width="1.5" opacity="0.95"/>
+    <circle cx="50" cy="89" r="8" fill="#0a0614" stroke="${classColor}" stroke-width="1.5" opacity="0.95"/>
     <text x="50" y="93" text-anchor="middle" fill="${classColor}"
           font-size="9" font-family="Georgia, serif">${glyph}</text>
   </g>

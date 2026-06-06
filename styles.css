@@ -2,25 +2,25 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:          #1a1510;
-  --bg-raised:   #221c15;
-  --bg-panel:    #1e1810;
-  --bg-sheet:    #201a12;
-  --ink:         #c8b89a;
-  --ink-dim:     #7a6e5f;
-  --ink-faint:   #3a3228;
-  --border:      rgba(200, 184, 154, 0.12);
-  --border-mid:  rgba(200, 184, 154, 0.22);
+  --bg:          #160d20;
+  --bg-raised:   #211530;
+  --bg-panel:    #1b1028;
+  --bg-sheet:    #1d1229;
+  --ink:         #c8c2d8;
+  --ink-dim:     #7e7894;
+  --ink-faint:   #3c2e54;
+  --border:      rgba(196, 186, 224, 0.12);
+  --border-mid:  rgba(196, 186, 224, 0.24);
 
-  --arm-creative: #d4a43a;
-  --arm-writing:  #9b72cf;
-  --arm-apps:     #4ab8b8;
+  --arm-creative: #c9a84c;
+  --arm-writing:  #a882e0;
+  --arm-apps:     #4ac8c0;
   --arm-life:     #d4706a;
 
-  --tier-common:    #8a9ba8;
-  --tier-rare:      #4ab8b8;
-  --tier-epic:      #9b72cf;
-  --tier-legendary: #d4a43a;
+  --tier-common:    #8a9bac;
+  --tier-rare:      #4ac8c0;
+  --tier-epic:      #a882e0;
+  --tier-legendary: #c9a84c;
 
   --font-display: 'Playfair Display', Georgia, serif;
   --font-mono:    'DM Mono', 'Courier New', monospace;
@@ -189,7 +189,7 @@ body {
   right: 0;
   z-index: 6;
   padding: 10px 12px;
-  background: linear-gradient(to bottom, rgba(26,21,16,0.85) 0%, rgba(26,21,16,0) 100%);
+  background: linear-gradient(to bottom, rgba(22,13,32,0.9) 0%, rgba(22,13,32,0) 100%);
   pointer-events: none;
 }
 
@@ -213,7 +213,7 @@ body {
 }
 
 .arm-filter, .status-filter {
-  background: rgba(26,21,16,0.75);
+  background: rgba(22,13,32,0.8);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--border-mid);
@@ -234,7 +234,7 @@ body {
 .arm-filter.active, .status-filter.active {
   color: var(--ink);
   border-color: var(--ink-dim);
-  background: rgba(26,21,16,0.9);
+  background: rgba(22,13,32,0.95);
 }
 .arm-filter[data-arm="creative"].active  { color: var(--arm-creative); border-color: var(--arm-creative); }
 .arm-filter[data-arm="writing"].active   { color: var(--arm-writing);  border-color: var(--arm-writing); }
@@ -248,7 +248,7 @@ body {
   width: 100%;
   height: 100%;
   position: relative;
-  background: #2a1f0e;
+  background: #100818;
   overflow: hidden;
 }
 
@@ -269,7 +269,7 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(10,8,5,0.18) 100%);
+  background: radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(8,4,16,0.22) 100%);
   pointer-events: none;
   z-index: 2;
 }
@@ -280,7 +280,7 @@ body {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to bottom, rgba(26,21,16,0.5) 0%, transparent 8%, transparent 92%, rgba(26,21,16,0.55) 100%);
+    linear-gradient(to bottom, rgba(22,13,32,0.55) 0%, transparent 8%, transparent 92%, rgba(22,13,32,0.6) 100%);
   pointer-events: none;
   z-index: 1;
 }
@@ -361,7 +361,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  background: rgba(26, 21, 16, 0.85);
+  background: rgba(22, 13, 32, 0.88);
   position: relative;
   transition: box-shadow 0.2s, filter 0.2s;
 }
@@ -411,8 +411,8 @@ body {
   opacity: 0;
   transition: opacity 0.15s;
   text-shadow:
-    0 0 6px #1a1510, 0 0 14px #1a1510,
-    0 1px 3px #1a1510, -1px 0 3px #1a1510, 1px 0 3px #1a1510;
+    0 0 6px #160d20, 0 0 14px #160d20,
+    0 1px 3px #160d20, -1px 0 3px #160d20, 1px 0 3px #160d20;
 }
 
 /* Show label on hover (desktop) or when selected (mobile tap) */
@@ -448,7 +448,7 @@ body {
 .sheet-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(10,8,5,0.6);
+  background: rgba(6,3,12,0.7);
   opacity: 0;
   transition: opacity 0.3s;
   cursor: pointer;
@@ -601,7 +601,7 @@ body {
 }
 .xp-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--arm-creative), #f0d060);
+  background: linear-gradient(90deg, var(--arm-creative), #e8d880);
   border-radius: 3px;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -938,7 +938,7 @@ body {
 .levelup-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10,8,5,0.93);
+  background: rgba(8,4,14,0.95);
   z-index: 200;
   display: flex;
   align-items: center;
@@ -1264,7 +1264,7 @@ body {
   background: var(--arm-creative);
   border: none;
   border-radius: 10px;
-  color: #1a1510;
+  color: #100818;
   font-family: var(--font-display);
   font-size: 17px;
   font-weight: 700;
@@ -1285,7 +1285,7 @@ body {
   border-radius: 50%;
   background: var(--arm-creative);
   border: none;
-  color: #1a1510;
+  color: #100818;
   font-size: 28px;
   font-weight: 300;
   line-height: 1;
@@ -1600,7 +1600,7 @@ body {
   background: var(--arm-creative);
   border: none;
   border-radius: 8px;
-  color: #1a1510;
+  color: #100818;
   font-family: var(--font-display);
   font-size: 15px;
   font-weight: 600;

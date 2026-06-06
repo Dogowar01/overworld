@@ -5,8 +5,8 @@
   "start_url": "/overworld/",
   "scope": "/overworld/",
   "display": "standalone",
-  "background_color": "#1a1510",
-  "theme_color": "#1a1510",
+  "background_color": "#160d20",
+  "theme_color": "#160d20",
   "orientation": "any",
   "icons": [
     {
