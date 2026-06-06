@@ -1,4 +1,4 @@
-const CACHE = 'overworld-v3';
+const CACHE = 'overworld-v4';
 const ASSETS = ['/', '/index.html', '/styles.css', '/app.js', '/data.js', '/map.png'];
 
 self.addEventListener('install', e => {

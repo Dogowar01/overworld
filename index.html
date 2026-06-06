@@ -101,6 +101,9 @@
           <span class="cartouche-sub">Year of the Wanderer</span>
         </div>
       </div>
+
+      <!-- FAB -->
+      <button class="fab" id="fab-create" aria-label="Create quest">+</button>
     </main>
 
     <!-- ── Character sheet overlay (slide up) ── -->
@@ -184,6 +187,64 @@
           <div class="qp-status" id="qp-status"></div>
           <div class="qp-tasks" id="qp-tasks"></div>
           <div class="qp-requires" id="qp-requires"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Create quest sheet ── -->
+    <div id="create-sheet" class="sheet hidden">
+      <div class="sheet-backdrop" id="create-backdrop"></div>
+      <div class="sheet-panel create-sheet-panel" id="create-sheet-panel">
+        <div class="sheet-handle"></div>
+        <div class="create-sheet-inner">
+          <button class="sheet-close" id="create-sheet-close">✕</button>
+          <h2 class="cq-heading">New Quest</h2>
+
+          <label class="cq-label">Title</label>
+          <input class="cq-input" id="cq-title" type="text" placeholder="Name your quest…" maxlength="60" />
+
+          <label class="cq-label">Description</label>
+          <textarea class="cq-textarea" id="cq-desc" placeholder="What is this quest about?" rows="3"></textarea>
+
+          <label class="cq-label">Arm</label>
+          <div class="cq-arm-row" id="cq-arms">
+            <button class="cq-arm-pill" data-arm="creative">Creative</button>
+            <button class="cq-arm-pill" data-arm="writing">Writing</button>
+            <button class="cq-arm-pill" data-arm="apps">Apps</button>
+            <button class="cq-arm-pill" data-arm="life">Life</button>
+          </div>
+
+          <label class="cq-label">Rarity</label>
+          <div class="cq-tier-row" id="cq-tiers">
+            <button class="cq-tier-card" data-tier="common">
+              <span class="cq-tier-icon">◦</span>
+              <span class="cq-tier-name">Common</span>
+              <span class="cq-tier-xp">5 XP / task · 25 XP bonus</span>
+            </button>
+            <button class="cq-tier-card" data-tier="rare">
+              <span class="cq-tier-icon">◈</span>
+              <span class="cq-tier-name">Rare</span>
+              <span class="cq-tier-xp">15 XP / task · 75 XP bonus</span>
+            </button>
+            <button class="cq-tier-card" data-tier="epic">
+              <span class="cq-tier-icon">⬡</span>
+              <span class="cq-tier-name">Epic</span>
+              <span class="cq-tier-xp">30 XP / task · 150 XP bonus</span>
+            </button>
+            <button class="cq-tier-card" data-tier="legendary">
+              <span class="cq-tier-icon">★</span>
+              <span class="cq-tier-name">Legendary</span>
+              <span class="cq-tier-xp">75 XP / task · 500 XP bonus</span>
+            </button>
+          </div>
+
+          <label class="cq-label">Tasks <button class="cq-add-task-btn" id="cq-add-task">+ Add task</button></label>
+          <div class="cq-task-list" id="cq-task-list"></div>
+
+          <label class="cq-label cq-label-prereq">Prerequisites <span class="cq-label-sub">optional</span></label>
+          <div class="cq-prereq-list" id="cq-prereq-list"></div>
+
+          <button class="cq-save-btn" id="cq-save">Create Quest</button>
         </div>
       </div>
     </div>

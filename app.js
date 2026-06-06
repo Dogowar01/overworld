@@ -31,8 +31,17 @@ let activeFilter = 'all';
 let activeStatusFilter = 'all';
 let openQuestId = null;
 
+// Create-sheet form state
+let cqSelectedArm  = 'creative';
+let cqSelectedTier = 'common';
+let cqSelectedPrereqs = new Set();
+
+// Drag state
+let dragState = null; // { questId, node, offsetX, offsetY, moved }
+
 function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
 function saveState()   { localStorage.setItem('overworld_state', JSON.stringify(state)); }
+function genId()       { return 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
 
 // ── Quest helpers
 function questStatus(quest) {
@@ -99,8 +108,72 @@ function renderMap() {
       </div>
       <span class="node-label">${quest.title}</span>
     `;
+    // ── Long-press drag
+    let pressTimer = null;
+    let pressStartX = 0, pressStartY = 0;
+    let didDrag = false;
+
+    node.addEventListener('touchstart', e => {
+      const touch = e.touches[0];
+      pressStartX = touch.clientX;
+      pressStartY = touch.clientY;
+      didDrag = false;
+
+      pressTimer = setTimeout(() => {
+        pressTimer = null;
+        didDrag = true; // suppress click
+        if (navigator.vibrate) navigator.vibrate(50);
+        dragState = { questId: quest.id, node };
+        node.classList.add('dragging');
+        document.querySelectorAll('.quest-node').forEach(n => n.classList.remove('selected'));
+      }, 420);
+    }, { passive: true });
+
+    node.addEventListener('touchmove', e => {
+      const touch = e.touches[0];
+      const dx = touch.clientX - pressStartX;
+      const dy = touch.clientY - pressStartY;
+
+      // Cancel long-press if finger moved more than 8px before timer fires
+      if (pressTimer && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+
+      if (!dragState || dragState.questId !== quest.id) return;
+      e.preventDefault();
+
+      const rect = container.getBoundingClientRect();
+      const x = ((touch.clientX - rect.left) / rect.width)  * 100;
+      const y = ((touch.clientY - rect.top)  / rect.height) * 100;
+      const clamped_x = Math.min(Math.max(x, 2), 98);
+      const clamped_y = Math.min(Math.max(y, 2), 98);
+
+      node.style.left = clamped_x + '%';
+      node.style.top  = clamped_y + '%';
+    }, { passive: false });
+
+    node.addEventListener('touchend', () => {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+
+      if (dragState && dragState.questId === quest.id) {
+        // Save final position from node's inline style
+        const x = parseFloat(node.style.left);
+        const y = parseFloat(node.style.top);
+        if (!isNaN(x) && !isNaN(y)) {
+          quest.x = Math.round(x * 10) / 10;
+          quest.y = Math.round(y * 10) / 10;
+          saveState();
+        }
+        node.classList.remove('dragging');
+        dragState = null;
+      }
+    });
+
+    // ── Tap to open (suppress if dragged)
     node.addEventListener('click', () => {
-      // Show label briefly, then open panel
+      if (didDrag) { didDrag = false; return; }
       document.querySelectorAll('.quest-node').forEach(n => n.classList.remove('selected'));
       node.classList.add('selected');
       openQuest(quest.id);
@@ -364,6 +437,133 @@ function showLevelUp(level) {
   overlay._timer = setTimeout(dismiss, 3000);
 }
 
+// ── Create quest sheet
+function openCreateSheet() {
+  // Reset form state
+  cqSelectedArm    = 'creative';
+  cqSelectedTier   = 'common';
+  cqSelectedPrereqs = new Set();
+
+  document.getElementById('cq-title').value = '';
+  document.getElementById('cq-desc').value  = '';
+
+  // Arm pills
+  document.querySelectorAll('.cq-arm-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.arm === cqSelectedArm);
+  });
+
+  // Tier cards
+  document.querySelectorAll('.cq-tier-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.tier === cqSelectedTier);
+  });
+
+  // Seed one task row
+  const taskList = document.getElementById('cq-task-list');
+  taskList.innerHTML = '';
+  addCqTaskRow(taskList);
+
+  // Prerequisites
+  const prereqList = document.getElementById('cq-prereq-list');
+  prereqList.innerHTML = '';
+  const available = state.quests;
+  if (!available.length) {
+    prereqList.innerHTML = '<div class="cq-prereq-empty">No quests yet</div>';
+  } else {
+    available.forEach(q => {
+      const item = document.createElement('div');
+      item.className = 'cq-prereq-item';
+      item.dataset.id = q.id;
+      item.innerHTML = `
+        <div class="cq-prereq-check"></div>
+        <span class="cq-prereq-name">${q.title}</span>
+        <span class="cq-prereq-arm">${ARM_LABELS[q.arm] || q.arm}</span>
+      `;
+      item.addEventListener('click', () => {
+        if (cqSelectedPrereqs.has(q.id)) {
+          cqSelectedPrereqs.delete(q.id);
+          item.classList.remove('selected');
+        } else {
+          cqSelectedPrereqs.add(q.id);
+          item.classList.add('selected');
+        }
+      });
+      prereqList.appendChild(item);
+    });
+  }
+
+  const sheet = document.getElementById('create-sheet');
+  sheet.classList.remove('hidden');
+  requestAnimationFrame(() => requestAnimationFrame(() => sheet.classList.add('open')));
+}
+
+function closeCreateSheet() {
+  const sheet = document.getElementById('create-sheet');
+  sheet.classList.remove('open');
+  setTimeout(() => sheet.classList.add('hidden'), 350);
+}
+
+function addCqTaskRow(list) {
+  const row = document.createElement('div');
+  row.className = 'cq-task-row';
+  row.innerHTML = `
+    <input class="cq-task-input" type="text" placeholder="Describe this task…" maxlength="120" />
+    <button class="cq-task-remove" aria-label="Remove task">×</button>
+  `;
+  row.querySelector('.cq-task-remove').addEventListener('click', () => {
+    row.remove();
+  });
+  list.appendChild(row);
+  // Focus new input
+  setTimeout(() => row.querySelector('.cq-task-input').focus(), 50);
+}
+
+function saveNewQuest() {
+  const title = document.getElementById('cq-title').value.trim();
+  if (!title) {
+    document.getElementById('cq-title').focus();
+    document.getElementById('cq-title').style.borderColor = 'var(--arm-life)';
+    setTimeout(() => document.getElementById('cq-title').style.borderColor = '', 1200);
+    return;
+  }
+
+  const desc  = document.getElementById('cq-desc').value.trim();
+  const tasks = [...document.querySelectorAll('.cq-task-input')]
+    .map(i => i.value.trim()).filter(Boolean);
+
+  // Pick a spawn position: slightly random, away from the centre
+  const x = 20 + Math.random() * 55;
+  const y = 25 + Math.random() * 55;
+
+  const newQuest = {
+    id:          genId(),
+    title,
+    description: desc || 'No description yet.',
+    arm:         cqSelectedArm,
+    tier:        cqSelectedTier,
+    x:           Math.round(x * 10) / 10,
+    y:           Math.round(y * 10) / 10,
+    tasks:       tasks.length ? tasks : ['Complete this quest'],
+    tasksDone:   (tasks.length ? tasks : ['Complete this quest']).map(() => false),
+    requires:    [...cqSelectedPrereqs],
+    completedAt: null,
+    createdAt:   new Date().toISOString()
+  };
+
+  state.quests.push(newQuest);
+  saveState();
+  renderMap();
+  renderCharacter();
+  closeCreateSheet();
+  // Brief highlight after sheet closes
+  setTimeout(() => {
+    const node = document.querySelector(`.quest-node[data-id="${newQuest.id}"]`);
+    if (node) {
+      node.classList.add('selected');
+      setTimeout(() => openQuest(newQuest.id), 100);
+    }
+  }, 400);
+}
+
 // ── Filters
 function setArmFilter(arm) {
   activeFilter = arm;
@@ -410,6 +610,33 @@ function init() {
       b.classList.add('active');
     });
   });
+
+  // FAB — create quest
+  document.getElementById('fab-create').addEventListener('click', openCreateSheet);
+
+  // Create sheet
+  document.getElementById('create-sheet-close').addEventListener('click', closeCreateSheet);
+  document.getElementById('create-backdrop').addEventListener('click', closeCreateSheet);
+
+  document.querySelectorAll('.cq-arm-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      cqSelectedArm = p.dataset.arm;
+      document.querySelectorAll('.cq-arm-pill').forEach(x => x.classList.toggle('active', x === p));
+    });
+  });
+
+  document.querySelectorAll('.cq-tier-card').forEach(c => {
+    c.addEventListener('click', () => {
+      cqSelectedTier = c.dataset.tier;
+      document.querySelectorAll('.cq-tier-card').forEach(x => x.classList.toggle('active', x === c));
+    });
+  });
+
+  document.getElementById('cq-add-task').addEventListener('click', () => {
+    addCqTaskRow(document.getElementById('cq-task-list'));
+  });
+
+  document.getElementById('cq-save').addEventListener('click', saveNewQuest);
 }
 
 document.addEventListener('DOMContentLoaded', init);
