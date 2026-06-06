@@ -438,57 +438,39 @@ function showLevelUp(level) {
 
 // ── Portrait handling
 
-// Build a DiceBear adventurer URL from character data + variation index
+// Build a DiceBear lorelei URL from character data + variation index
 function buildPortraitUrl(character, variation) {
   const seed = (character.name || 'adventurer') + (variation ? '-' + variation : '');
   const h    = seed.split('').reduce((a, c) => ((a * 31) + c.charCodeAt(0)) & 0xffffff, 7);
 
-  // Background colour per class
-  const bgMap = {
-    Chronicler: 'b89038', Architect: '28a0a0',
-    Artificer:  '7048b0', Wanderer:  'b85048'
+  // Class → two-tone gradient background (dark plum base + class accent)
+  const bgPairs = {
+    Chronicler: ['160820', 'b89038'],
+    Architect:  ['081820', '28a8a8'],
+    Artificer:  ['180828', '8058c0'],
+    Wanderer:   ['200810', 'c05848']
   };
-  const bg = bgMap[character.class] || '604878';
+  const [bg1, bg2] = bgPairs[character.class] || ['160820', '8058c0'];
 
   // Skin tone — diverse, deterministic from name
   const skins = ['f2d3b1','ecad80','e58c61','cf7049','b55338','8c4020','5c2810'];
   const skin  = skins[h % skins.length];
 
-  // Hair colour
-  const hairs = ['100800','3d1f0a','6b3a1f','8b5a2b','c49a4a','d0ccc8','888888'];
+  // Hair colour — deterministic
+  const hairs = ['0a0400','3d1f0a','6b3a1f','8b5a2b','c49a4a','d0ccc8','888888'];
   const hair  = hairs[(h >> 3) % hairs.length];
-
-  // Hair style by gender
-  const womanHair = ['long01','long02','long03','long04','long05','long06','long07',
-                     'long08','long09','long10','long11','long12','long13','long14',
-                     'long15','long16','long17','long18','long19','long20','long21'];
-  const manHair   = ['short01','short02','short03','short04','short05','short06',
-                     'short07','short08','short09','short10','short11','short12',
-                     'short13','short14','short15','short16','short17','short18','short19'];
-  const nbHair    = ['short05','short10','short15','short19','long05','long10','long15','long20'];
-
-  const pool = character.gender === 'Woman'  ? womanHair
-             : character.gender === 'Man'    ? manHair
-             :                                 nbHair;
-  const hairStyle = pool[(h >> 6) % pool.length];
-
-  // Eyes
-  const eyePool = ['variant01','variant02','variant03','variant04','variant05',
-                   'variant06','variant07','variant08','variant09','variant10'];
-  const eyes = eyePool[(h >> 9) % eyePool.length];
 
   const p = new URLSearchParams({
     seed,
-    backgroundColor:       bg,
-    backgroundType:        'gradientLinear',
-    backgroundRotation:    '150',
-    skinColor:             skin,
-    hairColor:             hair,
-    hair:                  hairStyle,
-    eyes,
-    radius:                '50'
+    primaryBackgroundColor:   bg1,
+    secondaryBackgroundColor: bg2,
+    backgroundType:           'gradientLinear',
+    backgroundRotation:       '150',
+    skinColor:                skin,
+    hairColor:                hair,
+    radius:                   '50'
   });
-  return `https://api.dicebear.com/8.x/adventurer/svg?${p}`;
+  return `https://api.dicebear.com/8.x/lorelei/svg?${p}`;
 }
 
 // Fetch the portrait SVG from DiceBear and return as a data URL
