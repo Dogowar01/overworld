@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Overworld</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1a1510" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Overworld" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+</head>
+<body>
+
+  <!-- SVG defs -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <pattern id="hatch-mountains" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="8" stroke="#c8b89a" stroke-width="0.6" stroke-opacity="0.25" />
+      </pattern>
+      <pattern id="hatch-forest" width="10" height="10" patternUnits="userSpaceOnUse">
+        <circle cx="5" cy="5" r="1.2" fill="#c8b89a" fill-opacity="0.2" />
+      </pattern>
+      <pattern id="hatch-dungeon" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+        <line x1="0" y1="0" x2="0" y2="6" stroke="#c8b89a" stroke-width="0.5" stroke-opacity="0.3" />
+        <line x1="3" y1="0" x2="3" y2="6" stroke="#c8b89a" stroke-width="0.5" stroke-opacity="0.15" />
+      </pattern>
+      <pattern id="hatch-town" width="12" height="12" patternUnits="userSpaceOnUse">
+        <path d="M12 0 L0 0 0 12" fill="none" stroke="#c8b89a" stroke-width="0.4" stroke-opacity="0.2" />
+      </pattern>
+      <filter id="node-glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="4" result="blur" />
+        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+      </filter>
+    </defs>
+  </svg>
+
+  <div id="app">
+
+    <!-- ── Header ── -->
+    <header id="site-header">
+      <div class="header-left">
+        <span class="logo-mark">◈</span>
+        <span class="logo-text">Overworld</span>
+      </div>
+      <nav class="header-nav">
+        <button class="nav-btn active" data-view="map">Map</button>
+        <button class="nav-btn" data-view="chronicle">Chronicle</button>
+      </nav>
+      <div class="header-right">
+        <!-- Character portrait button -->
+        <button id="char-portrait-btn" class="char-portrait-btn" aria-label="Open character sheet">
+          <span class="portrait-glyph" id="char-glyph">✦</span>
+          <div class="portrait-level-badge" id="portrait-level">3</div>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Map (full screen) ── -->
+    <main id="map-section">
+
+      <!-- Filter bar overlaid on map -->
+      <div id="filter-bar">
+        <div class="filter-scroll">
+          <button class="arm-filter active" data-arm="all">All</button>
+          <button class="arm-filter" data-arm="creative">Creative</button>
+          <button class="arm-filter" data-arm="writing">Writing</button>
+          <button class="arm-filter" data-arm="apps">Apps</button>
+          <button class="arm-filter" data-arm="life">Life</button>
+          <div class="filter-sep"></div>
+          <button class="status-filter active" data-status="all">All</button>
+          <button class="status-filter" data-status="available">Active</button>
+          <button class="status-filter" data-status="locked">Locked</button>
+          <button class="status-filter" data-status="complete">Done</button>
+        </div>
+      </div>
+
+      <div id="map-container">
+        <img id="map-img" src="map.png" alt="" aria-hidden="true" />
+        <svg id="roads-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="quest-nodes"></div>
+
+        <div class="compass">
+          <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="30,4 34,26 30,30 26,26" fill="#c8b89a" fill-opacity="0.7" />
+            <polygon points="56,30 34,34 30,30 34,26" fill="#c8b89a" fill-opacity="0.4" />
+            <polygon points="30,56 26,34 30,30 34,34" fill="#c8b89a" fill-opacity="0.5" />
+            <polygon points="4,30 26,26 30,30 26,34" fill="#c8b89a" fill-opacity="0.3" />
+            <circle cx="30" cy="30" r="4" fill="#c8b89a" fill-opacity="0.6" />
+            <text x="30" y="2" text-anchor="middle" fill="#c8b89a" fill-opacity="0.6" font-size="6" font-family="DM Mono">N</text>
+          </svg>
+        </div>
+
+        <div class="map-cartouche">
+          <span class="cartouche-title">The Known World</span>
+          <span class="cartouche-sub">Year of the Wanderer</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- ── Character sheet overlay (slide up) ── -->
+    <div id="char-sheet" class="sheet hidden">
+      <div class="sheet-backdrop" id="char-sheet-backdrop"></div>
+      <div class="sheet-panel" id="char-sheet-panel">
+        <div class="sheet-handle"></div>
+        <div class="char-sheet-inner">
+          <div class="cs-top">
+            <div class="cs-portrait-wrap">
+              <div class="cs-portrait-frame">
+                <span class="cs-portrait-glyph" id="cs-char-glyph">✦</span>
+              </div>
+            </div>
+            <div class="cs-identity">
+              <p class="cs-class" id="cs-char-class">Chronicler</p>
+              <h2 class="cs-name" id="cs-char-name">Adventurer</h2>
+              <div class="cs-level-row">
+                <span class="cs-level-label">LVL</span>
+                <span class="cs-level-num" id="cs-char-level">1</span>
+              </div>
+            </div>
+            <button class="sheet-close" id="char-sheet-close">✕</button>
+          </div>
+
+          <div class="cs-xp-block">
+            <div class="xp-bar-track">
+              <div class="xp-bar-fill" id="xp-bar-fill" style="width:0%"></div>
+              <div class="xp-bar-shimmer" id="xp-bar-shimmer"></div>
+            </div>
+            <div class="xp-labels">
+              <span class="xp-current" id="xp-current">0 XP</span>
+              <span class="xp-next" id="xp-next">/ 110</span>
+            </div>
+          </div>
+
+          <div class="cs-stats">
+            <div class="cs-stat">
+              <span class="cs-stat-val" id="stat-quests">0 / 0</span>
+              <span class="cs-stat-label">Quests</span>
+            </div>
+            <div class="cs-stat-divider"></div>
+            <div class="cs-stat">
+              <span class="cs-stat-val" id="stat-tasks">0</span>
+              <span class="cs-stat-label">Tasks done</span>
+            </div>
+            <div class="cs-stat-divider"></div>
+            <div class="cs-stat">
+              <span class="cs-stat-val" id="stat-arm">—</span>
+              <span class="cs-stat-label">Active arms</span>
+            </div>
+          </div>
+
+          <div class="cs-section-label">Active Quests</div>
+          <ul class="cs-quest-list" id="active-quest-list">
+            <li class="no-quests">No quests active</li>
+          </ul>
+
+          <div class="cs-section-label" style="margin-top:20px">Achievements</div>
+          <ul class="cs-achievement-list" id="cs-achievements">
+            <li class="no-quests">No achievements yet</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Quest detail panel (slide up from bottom) ── -->
+    <div id="quest-panel" class="sheet hidden">
+      <div class="sheet-backdrop" id="quest-backdrop"></div>
+      <div class="sheet-panel quest-sheet-panel" id="quest-sheet-panel">
+        <div class="sheet-handle"></div>
+        <div class="quest-panel-inner">
+          <button class="sheet-close" id="quest-panel-close">✕</button>
+          <div class="qp-meta">
+            <div class="qp-tier-badge" id="qp-tier"></div>
+            <div class="qp-arm-tag" id="qp-arm"></div>
+          </div>
+          <h2 class="qp-title" id="qp-title"></h2>
+          <p class="qp-desc" id="qp-desc"></p>
+          <div class="qp-xp-note" id="qp-xp-note"></div>
+          <div class="qp-status" id="qp-status"></div>
+          <div class="qp-tasks" id="qp-tasks"></div>
+          <div class="qp-requires" id="qp-requires"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── XP toast ── -->
+    <div id="xp-toast" class="xp-toast hidden">
+      <span class="xp-toast-text" id="xp-toast-text">+15 XP</span>
+    </div>
+
+    <!-- ── Level-up overlay ── -->
+    <div id="levelup-overlay" class="levelup-overlay hidden">
+      <div class="levelup-inner">
+        <p class="levelup-label">Level Up</p>
+        <p class="levelup-num" id="levelup-num">2</p>
+        <p class="levelup-title" id="levelup-title">Chronicler</p>
+        <p class="levelup-sub">The world grows larger.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
+</body>
+</html>

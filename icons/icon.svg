@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#1a1510"/>
+  <rect width="512" height="512" rx="80" fill="url(#bg-grad)"/>
+  <defs>
+    <radialGradient id="bg-grad" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#2a1f10"/>
+      <stop offset="100%" stop-color="#1a1510"/>
+    </radialGradient>
+  </defs>
+  <!-- Diamond mark -->
+  <polygon points="256,120 310,256 256,392 202,256" fill="none" stroke="#d4a43a" stroke-width="16" stroke-linejoin="round"/>
+  <!-- Inner diamond -->
+  <polygon points="256,185 284,256 256,327 228,256" fill="#d4a43a" opacity="0.9"/>
+  <!-- Corner dots -->
+  <circle cx="256" cy="120" r="8" fill="#d4a43a"/>
+  <circle cx="310" cy="256" r="8" fill="#d4a43a"/>
+  <circle cx="256" cy="392" r="8" fill="#d4a43a"/>
+  <circle cx="202" cy="256" r="8" fill="#d4a43a"/>
+</svg>
