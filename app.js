@@ -101,8 +101,29 @@ function renderMap() {
   const container = document.getElementById('quest-nodes');
   container.innerHTML = '';
 
-  const w = container.offsetWidth;
-  const h = container.offsetHeight;
+  // Empty-state overlay
+  const emptyEl    = document.getElementById('map-empty-state');
+  const emptyTitle = document.getElementById('map-empty-title');
+  const emptySub   = document.getElementById('map-empty-sub');
+  if (emptyEl) {
+    const visible = state.quests.filter(q => {
+      if (activeFilter !== 'all' && q.arm !== activeFilter) return false;
+      if (activeStatusFilter !== 'all' && questStatus(q) !== activeStatusFilter) return false;
+      return true;
+    });
+    if (!visible.length) {
+      emptyEl.classList.remove('hidden');
+      if (!state.quests.length) {
+        emptyTitle.textContent = 'Your world awaits.';
+        emptySub.textContent   = 'Tap + to create your first quest.';
+      } else {
+        emptyTitle.textContent = 'No quests match this filter.';
+        emptySub.textContent   = '';
+      }
+    } else {
+      emptyEl.classList.add('hidden');
+    }
+  }
 
   // Nodes
   state.quests.forEach(quest => {
@@ -563,11 +584,25 @@ function showXPToast(text) {
   }, 1800);
 }
 
+function getLevelFlavour(level) {
+  if (level === 2)  return 'The first step beyond the beginning.';
+  if (level === 3)  return 'Something stirs in the distance.';
+  if (level <= 5)   return 'You are finding your stride.';
+  if (level <= 8)   return 'The world bends to your will.';
+  if (level === 10) return 'A name spoken in whispers.';
+  if (level <= 13)  return 'The path grows steep — and worth it.';
+  if (level <= 15)  return 'Legends are forged in moments like this.';
+  if (level <= 18)  return 'Few have walked this far.';
+  if (level === 20) return 'The summit. And beyond it, more.';
+  return 'Beyond legend. Beyond measure.';
+}
+
 // ── Level-up
 function showLevelUp(level) {
   const overlay = document.getElementById('levelup-overlay');
   document.getElementById('levelup-num').textContent   = level;
   document.getElementById('levelup-title').textContent = state.character.class;
+  document.getElementById('levelup-sub').textContent   = getLevelFlavour(level);
   overlay.classList.remove('hidden');
   requestAnimationFrame(() => overlay.classList.add('show'));
   animateXPBar();
@@ -580,6 +615,21 @@ function showLevelUp(level) {
   overlay.addEventListener('click', dismiss);
   clearTimeout(overlay._timer);
   overlay._timer = setTimeout(dismiss, 3000);
+}
+
+// ── Drag hint (shown once after first map load with quests)
+function showDragHint() {
+  if (state.dragHintSeen || !state.quests.length) return;
+  const hint = document.getElementById('drag-hint');
+  if (!hint) return;
+  hint.classList.remove('hidden');
+  requestAnimationFrame(() => hint.classList.add('show'));
+  setTimeout(() => {
+    hint.classList.remove('show');
+    setTimeout(() => hint.classList.add('hidden'), 400);
+  }, 3800);
+  state.dragHintSeen = true;
+  saveState();
 }
 
 // ── Achievement notification queue
@@ -1052,15 +1102,20 @@ function initCharCreate() {
       if (val) arms[slots[i]] = val;
     });
 
-    state.character.name    = name;
-    state.character.class   = ccSelectedClass;
-    state.character.race    = ccSelectedRace;
-    state.character.gender  = ccSelectedGender;
-    state.character.arms    = arms;
+    state.character.name     = name;
+    state.character.class    = ccSelectedClass;
+    state.character.race     = ccSelectedRace;
+    state.character.gender   = ccSelectedGender;
+    state.character.arms     = arms;
     state.character.portrait = ccPreviewData || state.character.portrait || null;
-    state.character.level   = 1;
-    state.character.xp      = 0;
-    state.characterCreated  = true;
+    state.character.level    = 1;
+    state.character.xp       = 0;
+    state.characterCreated   = true;
+    // Clear demo quests — player starts with a blank world they fill themselves
+    state.quests        = [];
+    state.chronicle     = [];
+    state.achievements  = [];
+    state.dragHintSeen  = false;
     saveState();
 
     // Fade out, then remove
@@ -1068,7 +1123,9 @@ function initCharCreate() {
     setTimeout(() => {
       screen.classList.add('hidden');
       renderFilters();
+      renderMap();
       renderCharacter();
+      setTimeout(showDragHint, 800);
     }, 600);
   });
 }
@@ -1266,6 +1323,10 @@ function renderChronicle() {
     groups[key].items.push(e);
   });
 
+  // Flatten to know the absolute last entry (no spine line below it)
+  const allItems = Object.values(groups).flatMap(g => g.items);
+  const lastEntry = allItems[allItems.length - 1];
+
   let html = '';
   Object.values(groups).forEach(group => {
     html += `<div class="chronicle-month-label">${group.label}</div>`;
@@ -1280,7 +1341,7 @@ function renderChronicle() {
       const xpEarned  = quest
         ? (XP.task[tier] * quest.tasks.length) + XP.quest[tier]
         : XP.quest[tier];
-      const isLast    = i === group.items.length - 1;
+      const isLast    = e === lastEntry;
       const noteHtml  = e.note
         ? `<div class="chronicle-entry-note">${e.note}</div>`
         : '';
@@ -1376,6 +1437,8 @@ function init() {
   // Character creation — show on first run, hide immediately if already done
   initCharCreate();
   if (state.characterCreated) {
+    // Show drag hint once for returning users who haven't seen it
+    if (!state.dragHintSeen) setTimeout(showDragHint, 1200);
     document.getElementById('char-create').classList.add('hidden');
   }
 

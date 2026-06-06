@@ -1023,6 +1023,70 @@ body {
   margin-bottom: 4px;
 }
 
+/* ── Empty map state ── */
+.map-empty-state {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 2;
+}
+.map-empty-state.hidden { display: none; }
+.map-empty-icon {
+  font-size: 32px;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+  display: block;
+  opacity: 0.6;
+}
+.map-empty-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-style: italic;
+  color: var(--ink-dim);
+}
+.map-empty-sub {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+/* ── Drag hint tooltip ── */
+.drag-hint {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-mid);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--ink-dim);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  white-space: nowrap;
+}
+.drag-hint.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.drag-hint.hidden { display: none; }
+.drag-hint-icon {
+  font-size: 14px;
+  color: var(--arm-creative);
+}
+
 /* ── Quest panel action buttons ── */
 .qp-actions {
   display: flex;

@@ -101,6 +101,19 @@
           <span class="cartouche-title">The Known World</span>
           <span class="cartouche-sub">Year of the Wanderer</span>
         </div>
+
+        <!-- Empty map state -->
+        <div class="map-empty-state hidden" id="map-empty-state">
+          <span class="map-empty-icon">◎</span>
+          <p class="map-empty-title" id="map-empty-title">Your world awaits.</p>
+          <p class="map-empty-sub" id="map-empty-sub">Tap + to create your first quest.</p>
+        </div>
+
+        <!-- Drag hint (shown once) -->
+        <div class="drag-hint hidden" id="drag-hint">
+          <span class="drag-hint-icon">⟳</span>
+          Hold a quest node to drag it
+        </div>
       </div>
 
       <!-- FAB -->
@@ -183,7 +196,7 @@
 
           <div class="cs-section-label" style="margin-top:20px">
             Achievements
-            <span class="cs-ach-count" id="cs-ach-count">0 / 18</span>
+            <span class="cs-ach-count" id="cs-ach-count">0 / —</span>
           </div>
           <ul class="cs-achievement-list" id="cs-achievements">
             <li class="no-quests">No achievements yet</li>
