@@ -201,6 +201,26 @@
           <ul class="cs-achievement-list" id="cs-achievements">
             <li class="no-quests">No achievements yet</li>
           </ul>
+
+          <!-- ── Data / backup ── -->
+          <div class="cs-section-label" style="margin-top:24px">World Data</div>
+          <div class="cs-data-row">
+            <button class="cs-data-btn" id="cs-export-btn">
+              <span class="cs-data-icon">↓</span> Export backup
+            </button>
+            <label class="cs-data-btn cs-import-label" id="cs-import-label">
+              <span class="cs-data-icon">↑</span> Import backup
+              <input type="file" id="cs-import-file" accept=".json" style="display:none" />
+            </label>
+          </div>
+          <!-- Import confirmation (hidden until file chosen) -->
+          <div class="cs-import-confirm hidden" id="cs-import-confirm">
+            <p class="cs-import-warn">⚠ This will replace your current world. Are you sure?</p>
+            <div class="cs-import-actions">
+              <button class="cs-import-yes" id="cs-import-yes">Yes, replace</button>
+              <button class="cs-import-no"  id="cs-import-no">Cancel</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

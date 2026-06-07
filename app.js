@@ -1389,6 +1389,73 @@ function showMap() {
   document.getElementById('fab-create').style.display = '';
 }
 
+// ── Export / Import
+function exportState() {
+  const payload = {
+    _version:   1,
+    _exportedAt: new Date().toISOString(),
+    _app:       'overworld',
+    ...deepClone(state)
+  };
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const date = new Date().toISOString().slice(0, 10);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `overworld-backup-${date}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showXPToast('World exported ✓');
+}
+
+let pendingImportData = null;
+
+function handleImportFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      // Basic validation
+      if (!data.character || !Array.isArray(data.quests)) {
+        showXPToast('Invalid backup file');
+        return;
+      }
+      pendingImportData = data;
+      // Show confirmation
+      document.getElementById('cs-import-confirm').classList.remove('hidden');
+    } catch {
+      showXPToast('Could not read file');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function confirmImport() {
+  if (!pendingImportData) return;
+  // Strip the export metadata and load the world data
+  const { _version, _exportedAt, _app, ...worldData } = pendingImportData;
+  state = worldData;
+  saveState();
+  pendingImportData = null;
+  document.getElementById('cs-import-confirm').classList.add('hidden');
+  document.getElementById('cs-import-file').value = '';
+  recalcLevel();
+  renderFilters();
+  renderMap();
+  renderCharacter();
+  showXPToast('World restored ✓');
+}
+
+function cancelImport() {
+  pendingImportData = null;
+  document.getElementById('cs-import-confirm').classList.add('hidden');
+  document.getElementById('cs-import-file').value = '';
+}
+
 // ── Filters
 function renderFilters() {
   const labels = getArmLabels();
@@ -1510,6 +1577,14 @@ function init() {
   });
 
   document.getElementById('cq-save').addEventListener('click', saveNewQuest);
+
+  // Export / Import
+  document.getElementById('cs-export-btn').addEventListener('click', exportState);
+  document.getElementById('cs-import-file').addEventListener('change', e => {
+    handleImportFile(e.target.files[0]);
+  });
+  document.getElementById('cs-import-yes').addEventListener('click', confirmImport);
+  document.getElementById('cs-import-no').addEventListener('click',  cancelImport);
 }
 
 document.addEventListener('DOMContentLoaded', init);
