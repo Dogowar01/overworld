@@ -431,6 +431,47 @@ function openQuest(id) {
   });
   actionsEl.appendChild(deleteBtn);
 
+  // Journal note — only for completed quests
+  const noteEl = document.getElementById('qp-note-section');
+  if (status === 'complete') {
+    const entry    = state.chronicle.find(e => e.questId === id);
+    const existing = entry ? (entry.note || '') : '';
+    noteEl.classList.remove('hidden');
+    noteEl.innerHTML = `
+      <div class="qp-note-label">
+        <span class="qp-note-icon">✦</span> Chronicle note
+      </div>
+      <textarea class="qp-note-textarea" id="qp-note-input"
+        placeholder="Write a retrospective note about this quest…"
+        maxlength="600" rows="4">${existing}</textarea>
+      <div class="qp-note-footer">
+        <span class="qp-note-saved" id="qp-note-saved"></span>
+        <span class="qp-note-count" id="qp-note-count">${existing.length} / 600</span>
+      </div>
+    `;
+    const textarea  = document.getElementById('qp-note-input');
+    const savedEl   = document.getElementById('qp-note-saved');
+    const countEl   = document.getElementById('qp-note-count');
+    let saveTimer   = null;
+
+    textarea.addEventListener('input', () => {
+      countEl.textContent = `${textarea.value.length} / 600`;
+      savedEl.textContent = '';
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        if (entry) {
+          entry.note = textarea.value.trim() || null;
+          saveState();
+          savedEl.textContent = 'Saved';
+          setTimeout(() => { savedEl.textContent = ''; }, 1800);
+        }
+      }, 800);
+    });
+  } else {
+    noteEl.classList.add('hidden');
+    noteEl.innerHTML = '';
+  }
+
   const panel = document.getElementById('quest-panel');
   panel.classList.remove('hidden');
   requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add('open')));

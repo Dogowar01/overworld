@@ -1190,6 +1190,63 @@ body {
   font-size: 12px;
 }
 
+/* ── Quest panel — journal note ── */
+.qp-note-section {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--arm-creative);
+  border-radius: 0 8px 8px 0;
+}
+.qp-note-section.hidden { display: none; }
+
+.qp-note-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--arm-creative);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.qp-note-icon { font-size: 11px; }
+
+.qp-note-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink);
+  caret-color: var(--arm-creative);
+}
+.qp-note-textarea::placeholder { color: var(--ink-faint); font-style: italic; }
+
+.qp-note-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+.qp-note-saved {
+  font-size: 10px;
+  color: var(--arm-apps);
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  transition: opacity 0.3s;
+}
+.qp-note-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+
 /* ── XP toast ── */
 .xp-toast {
   position: fixed;
