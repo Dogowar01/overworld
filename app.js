@@ -1477,7 +1477,7 @@ function init() {
   });
 
   // FAB — create quest
-  document.getElementById('fab-create').addEventListener('click', openCreateSheet);
+  document.getElementById('fab-create').addEventListener('click', () => openCreateSheet());
 
   // Create sheet
   document.getElementById('create-sheet-close').addEventListener('click', closeCreateSheet);
