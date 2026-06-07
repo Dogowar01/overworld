@@ -1419,15 +1419,115 @@ function renderChronicle() {
 
 function showChronicle() {
   document.getElementById('map-section').classList.add('hidden');
+  document.getElementById('stats-section').classList.add('hidden');
   document.getElementById('chronicle-section').classList.remove('hidden');
   document.getElementById('fab-create').style.display = 'none';
   renderChronicle();
 }
 
+function showStats() {
+  document.getElementById('map-section').classList.add('hidden');
+  document.getElementById('chronicle-section').classList.add('hidden');
+  document.getElementById('stats-section').classList.remove('hidden');
+  document.getElementById('fab-create').style.display = 'none';
+  renderStats();
+}
+
 function showMap() {
   document.getElementById('chronicle-section').classList.add('hidden');
+  document.getElementById('stats-section').classList.add('hidden');
   document.getElementById('map-section').classList.remove('hidden');
   document.getElementById('fab-create').style.display = '';
+}
+
+// ── Stats
+function renderStats() {
+  const c         = state.character;
+  const quests    = state.quests;
+  const completed = quests.filter(q => q.completedAt);
+  const totalTasks = quests.reduce((s, q) => s + q.tasks.length, 0);
+  const doneTasks  = quests.reduce((s, q) => s + q.tasksDone.filter(Boolean).length, 0);
+
+  // Top cards
+  document.getElementById('st-level').textContent  = c.level;
+  document.getElementById('st-xp').textContent     = c.xp.toLocaleString();
+  document.getElementById('st-quests').textContent = `${completed.length}/${quests.length}`;
+  document.getElementById('st-tasks').textContent  = `${doneTasks}/${totalTasks}`;
+
+  // By Area
+  const armLabels = getArmLabels();
+  const arms      = state.characterCreated
+    ? Object.entries(state.character.arms || {}).filter(([, v]) => v && v.trim()).map(([k]) => k)
+    : ['creative', 'writing', 'apps', 'life'];
+
+  document.getElementById('st-arms').innerHTML = arms.length ? arms.map(arm => {
+    const total = quests.filter(q => q.arm === arm).length;
+    const done  = completed.filter(q => q.arm === arm).length;
+    const pct   = total ? (done / total) * 100 : 0;
+    return `
+      <div class="st-arm-row">
+        <div class="st-arm-meta">
+          <span class="st-arm-label">${armLabels[arm]}</span>
+          <span class="st-arm-count">${done} / ${total || 0}</span>
+        </div>
+        <div class="st-bar-track">
+          <div class="st-bar-fill arm-${arm}" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+  }).join('') : '<div class="st-empty">No areas defined.</div>';
+
+  // By Tier
+  const tiers  = ['common', 'rare', 'epic', 'legendary'];
+  const tierMax = Math.max(...tiers.map(t => quests.filter(q => q.tier === t).length), 1);
+  document.getElementById('st-tiers').innerHTML = tiers.map(tier => {
+    const total = quests.filter(q => q.tier === tier).length;
+    const done  = completed.filter(q => q.tier === tier).length;
+    const pct   = (total / tierMax) * 100;
+    return `
+      <div class="st-tier-row">
+        <span class="st-tier-icon tier-${tier}">${TIER_ICONS[tier]}</span>
+        <span class="st-tier-name">${tier[0].toUpperCase() + tier.slice(1)}</span>
+        <div class="st-bar-track">
+          <div class="st-bar-fill tier-fill-${tier}" style="width:${pct}%"></div>
+        </div>
+        <span class="st-tier-count">${done}<span class="st-tier-total">/${total}</span></span>
+      </div>`;
+  }).join('');
+
+  // XP by Month (bar chart from chronicle)
+  const timelineEl = document.getElementById('st-timeline');
+  if (!state.chronicle.length) {
+    timelineEl.innerHTML = '<div class="st-empty">Complete quests to see your timeline.</div>';
+    return;
+  }
+  const monthMap = {};
+  state.chronicle.forEach(e => {
+    const d   = new Date(e.completedAt);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    const lbl = d.toLocaleDateString('en-AU', { month: 'short', year: '2-digit' });
+    const q   = quests.find(qq => qq.id === e.questId);
+    const xp  = (q ? XP.task[e.tier] * q.tasks.length : 0) + XP.quest[e.tier];
+    if (!monthMap[key]) monthMap[key] = { label: lbl, xp: 0, count: 0 };
+    monthMap[key].xp    += xp;
+    monthMap[key].count += 1;
+  });
+  const months = Object.values(monthMap);
+  const maxXP  = Math.max(...months.map(m => m.xp), 1);
+  timelineEl.innerHTML = `
+    <div class="st-chart">
+      ${months.map(m => `
+        <div class="st-chart-col">
+          <div class="st-chart-bar-wrap">
+            <div class="st-chart-bar" style="height:${Math.max((m.xp / maxXP) * 100, 4)}%">
+              <span class="st-chart-tip">${m.xp} XP</span>
+            </div>
+          </div>
+          <div class="st-chart-label">${m.label}</div>
+        </div>`).join('')}
+    </div>
+    <div class="st-chart-legend">
+      ${months.map(m => `<span>${m.count} quest${m.count !== 1 ? 's' : ''}</span>`).join('<span class="st-chart-sep">·</span>')}
+    </div>`;
 }
 
 // ── Export / Import
@@ -1569,6 +1669,7 @@ function init() {
       document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
       if (b.dataset.view === 'chronicle') showChronicle();
+      else if (b.dataset.view === 'stats') showStats();
       else showMap();
     });
   });

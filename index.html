@@ -51,6 +51,7 @@
       <nav class="header-nav">
         <button class="nav-btn active" data-view="map">Map</button>
         <button class="nav-btn" data-view="chronicle">Chronicle</button>
+        <button class="nav-btn" data-view="stats">Stats</button>
       </nav>
       <div class="header-right">
         <!-- Character portrait button -->
@@ -118,6 +119,48 @@
 
       <!-- FAB -->
       <button class="fab" id="fab-create" aria-label="Create quest">+</button>
+    </main>
+
+    <!-- ── Stats section ── -->
+    <main id="stats-section" class="hidden">
+      <div class="stats-header">
+        <h2 class="stats-title">Stats</h2>
+      </div>
+      <div class="stats-body">
+
+        <!-- Top cards -->
+        <div class="st-cards">
+          <div class="st-card">
+            <div class="st-card-val" id="st-level">1</div>
+            <div class="st-card-label">Level</div>
+          </div>
+          <div class="st-card">
+            <div class="st-card-val st-card-val--sm" id="st-xp">0</div>
+            <div class="st-card-label">Total XP</div>
+          </div>
+          <div class="st-card">
+            <div class="st-card-val st-card-val--sm" id="st-quests">0/0</div>
+            <div class="st-card-label">Quests</div>
+          </div>
+          <div class="st-card">
+            <div class="st-card-val st-card-val--sm" id="st-tasks">0/0</div>
+            <div class="st-card-label">Tasks</div>
+          </div>
+        </div>
+
+        <!-- By Area -->
+        <div class="st-section-label">By Area</div>
+        <div class="st-arms" id="st-arms"></div>
+
+        <!-- By Tier -->
+        <div class="st-section-label">By Tier</div>
+        <div class="st-tiers" id="st-tiers"></div>
+
+        <!-- XP by Month -->
+        <div class="st-section-label">XP by Month</div>
+        <div class="st-timeline" id="st-timeline"></div>
+
+      </div>
     </main>
 
     <!-- ── Chronicle section ── -->
