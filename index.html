@@ -79,7 +79,16 @@
           <button class="status-filter" data-status="available">Active</button>
           <button class="status-filter" data-status="locked">Locked</button>
           <button class="status-filter" data-status="complete">Done</button>
+          <div class="filter-sep"></div>
+          <button class="search-toggle-btn" id="search-toggle" aria-label="Search quests">⌕</button>
+          <button class="map-export-btn" id="map-export-btn" aria-label="Export map image">↗</button>
         </div>
+      </div>
+      <!-- Search bar (hidden until toggled) -->
+      <div class="search-bar hidden" id="search-bar">
+        <input class="search-input" id="search-input" type="search"
+               placeholder="Search quests…" autocomplete="off" />
+        <button class="search-clear" id="search-clear">✕</button>
       </div>
 
       <div id="map-container">
@@ -190,7 +199,10 @@
               <div class="cs-portrait-frame" id="cs-portrait-frame">
                 <span class="cs-portrait-glyph" id="cs-char-glyph">✦</span>
               </div>
-              <label class="cs-change-portrait" for="cs-portrait-file" title="Change portrait">✎</label>
+              <div class="cs-portrait-btns">
+                <button class="cs-portrait-action-btn" id="cs-regen-portrait" title="Regenerate portrait">↻</button>
+                <label class="cs-portrait-action-btn" for="cs-portrait-file" title="Upload photo">✎</label>
+              </div>
               <input type="file" id="cs-portrait-file" accept="image/*" style="display:none" />
             </div>
             <div class="cs-identity">
@@ -237,6 +249,30 @@
             <li class="no-quests">No quests active</li>
           </ul>
 
+          <!-- Quest Areas rename -->
+          <div class="cs-section-label" style="margin-top:20px">
+            Quest Areas
+            <button class="cs-toggle-btn" id="cs-arms-toggle">Edit</button>
+          </div>
+          <div class="cs-arms-edit hidden" id="cs-arms-edit">
+            <div class="cs-arm-edit-row">
+              <div class="cs-arm-dot" style="background:var(--arm-creative)"></div>
+              <input class="cs-arm-edit-input" data-slot="creative" type="text" maxlength="20" placeholder="Area 1" />
+            </div>
+            <div class="cs-arm-edit-row">
+              <div class="cs-arm-dot" style="background:var(--arm-writing)"></div>
+              <input class="cs-arm-edit-input" data-slot="writing" type="text" maxlength="20" placeholder="Area 2" />
+            </div>
+            <div class="cs-arm-edit-row">
+              <div class="cs-arm-dot" style="background:var(--arm-apps)"></div>
+              <input class="cs-arm-edit-input" data-slot="apps" type="text" maxlength="20" placeholder="Area 3" />
+            </div>
+            <div class="cs-arm-edit-row">
+              <div class="cs-arm-dot" style="background:var(--arm-life)"></div>
+              <input class="cs-arm-edit-input" data-slot="life" type="text" maxlength="20" placeholder="Area 4" />
+            </div>
+          </div>
+
           <div class="cs-section-label" style="margin-top:20px">
             Achievements
             <span class="cs-ach-count" id="cs-ach-count">0 / —</span>
@@ -262,6 +298,22 @@
             <div class="cs-import-actions">
               <button class="cs-import-yes" id="cs-import-yes">Yes, replace</button>
               <button class="cs-import-no"  id="cs-import-no">Cancel</button>
+            </div>
+          </div>
+          <!-- Map export + Reset -->
+          <div class="cs-data-row" style="margin-top:8px">
+            <button class="cs-data-btn" id="cs-map-export-btn">
+              <span class="cs-data-icon">↗</span> Share map image
+            </button>
+            <button class="cs-data-btn cs-reset-btn" id="cs-reset-btn">
+              <span class="cs-data-icon">↺</span> Reset world
+            </button>
+          </div>
+          <div class="cs-reset-confirm hidden" id="cs-reset-confirm">
+            <p class="cs-import-warn">⚠ This permanently deletes your world. Cannot be undone.</p>
+            <div class="cs-import-actions">
+              <button class="cs-import-yes" id="cs-reset-yes">Yes, delete everything</button>
+              <button class="cs-import-no"  id="cs-reset-no">Cancel</button>
             </div>
           </div>
         </div>

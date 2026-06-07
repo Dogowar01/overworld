@@ -79,6 +79,10 @@ let editingQuestId = null; // null = create mode, string id = edit mode
 // Drag state
 let dragState = null; // { questId, node, offsetX, offsetY, moved }
 
+// Search state
+let searchQuery = '';
+let csVariation = 0; // portrait variation counter for char-sheet regen
+
 function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
 function saveState()   { localStorage.setItem('overworld_state', JSON.stringify(state)); }
 function genId()       { return 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
@@ -130,6 +134,7 @@ function renderMap() {
     if (activeFilter !== 'all' && quest.arm !== activeFilter) return;
     const status = questStatus(quest);
     if (activeStatusFilter !== 'all' && status !== activeStatusFilter) return;
+    if (searchQuery && !quest.title.toLowerCase().includes(searchQuery.toLowerCase())) return;
 
     const node = document.createElement('div');
     node.className  = `quest-node ${status}`;
@@ -517,8 +522,8 @@ function awardXP(amount) {
   const prev = state.character.level;
   recalcLevel();
   if (state.character.level > prev) {
-    checkAchievements();
     setTimeout(() => showLevelUp(state.character.level), 600);
+    checkAchievements(3800); // wait for level-up overlay to clear first
   } else {
     checkAchievements();
     animateXPBar();
@@ -704,7 +709,8 @@ function drainAchQueue() {
 }
 
 // ── Check and unlock achievements
-function checkAchievements() {
+// baseDelay: ms to wait before showing first notification (e.g. after level-up overlay)
+function checkAchievements(baseDelay = 0) {
   const c        = state.character;
   const completed = state.quests.filter(q => q.completedAt);
   const cCount   = completed.length;
@@ -747,7 +753,7 @@ function checkAchievements() {
 
   if (newOnes.length) {
     saveState();
-    newOnes.forEach((ach, i) => setTimeout(() => showAchievementToast(ach), i * 3800));
+    newOnes.forEach((ach, i) => setTimeout(() => showAchievementToast(ach), baseDelay + i * 3800));
   }
 }
 
@@ -1597,6 +1603,132 @@ function cancelImport() {
   document.getElementById('cs-import-file').value = '';
 }
 
+// ── Map image export
+async function exportMapImage() {
+  const mapImg = document.getElementById('map-img');
+  const SIZE   = 1080;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = SIZE;
+  const ctx = canvas.getContext('2d');
+
+  // Background + map image
+  ctx.fillStyle = '#160d20';
+  ctx.fillRect(0, 0, SIZE, SIZE);
+  ctx.drawImage(mapImg, 0, 0, SIZE, SIZE);
+
+  const armColor = { creative:'#c9a84c', writing:'#a882e0', apps:'#4ac8c0', life:'#d4706a' };
+
+  state.quests.forEach(quest => {
+    const px  = (quest.x / 100) * SIZE;
+    const py  = (quest.y / 100) * SIZE;
+    const col = armColor[quest.arm] || '#c8c2d8';
+    const r   = 18;
+
+    // Glow + background circle
+    ctx.beginPath(); ctx.arc(px, py, r + 5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(22,13,32,0.5)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(22,13,32,0.9)'; ctx.fill();
+
+    // Border
+    ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2);
+    ctx.strokeStyle = col;
+    ctx.lineWidth   = quest.completedAt ? 3 : 2;
+    ctx.stroke();
+
+    // Tier icon
+    ctx.font = '15px serif';
+    ctx.fillStyle = col;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(TIER_ICONS[quest.tier] || '◦', px, py);
+
+    // Label
+    ctx.font = '10px sans-serif';
+    ctx.fillStyle = 'rgba(200,194,216,0.85)';
+    ctx.textBaseline = 'top';
+    const label = quest.title.length > 24 ? quest.title.slice(0, 23) + '…' : quest.title;
+    ctx.fillText(label, px, py + r + 4);
+  });
+
+  // Branding watermark
+  ctx.font = 'italic 14px Georgia, serif';
+  ctx.fillStyle = 'rgba(200,194,216,0.4)';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(`Overworld ◈ ${state.character.name}`, SIZE - 14, SIZE - 14);
+
+  canvas.toBlob(async blob => {
+    const fname = `overworld-map-${new Date().toISOString().slice(0,10)}.png`;
+    const file  = new File([blob], fname, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ title: 'My Overworld', files: [file] }); return; }
+      catch { /* fall through */ }
+    }
+    const url = URL.createObjectURL(blob);
+    const a   = Object.assign(document.createElement('a'), { href: url, download: fname });
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    showXPToast('Map saved ✓');
+  }, 'image/png');
+}
+
+// ── Portrait regen from character sheet
+async function regenSheetPortrait() {
+  const btn = document.getElementById('cs-regen-portrait');
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  csVariation++;
+  const dataUrl = await fetchPortrait(state.character, csVariation + 50);
+  if (dataUrl) { state.character.portrait = dataUrl; saveState(); renderCharacter(); }
+  if (btn) { btn.disabled = false; btn.textContent = '↻'; }
+}
+
+// ── Arms rename (character sheet edit panel)
+function initArmsEdit() {
+  const toggleBtn = document.getElementById('cs-arms-toggle');
+  const panel     = document.getElementById('cs-arms-edit');
+  const inputs    = document.querySelectorAll('.cs-arm-edit-input');
+
+  // Populate inputs with current values
+  inputs.forEach(inp => {
+    const slot = inp.dataset.slot;
+    inp.value  = (state.character.arms || {})[slot] || '';
+    inp.addEventListener('input', () => {
+      if (!state.character.arms) state.character.arms = {};
+      const val = inp.value.trim();
+      if (val) state.character.arms[slot] = val;
+      else delete state.character.arms[slot];
+      saveState();
+      renderFilters();
+    });
+  });
+
+  toggleBtn.addEventListener('click', () => {
+    const isHidden = panel.classList.toggle('hidden');
+    toggleBtn.textContent = isHidden ? 'Edit' : 'Done';
+  });
+}
+
+// ── Reset world
+function resetWorld() {
+  localStorage.removeItem('overworld_state');
+  location.reload();
+}
+
+// ── Search bar toggle
+function toggleSearch() {
+  const bar   = document.getElementById('search-bar');
+  const input = document.getElementById('search-input');
+  const open  = bar.classList.toggle('hidden');
+  if (!open) {           // just opened (hidden was removed)
+    input.focus();
+  } else {               // just closed
+    searchQuery = '';
+    input.value = '';
+    renderMap();
+  }
+}
+
 // ── Filters
 function renderFilters() {
   const labels = getArmLabels();
@@ -1727,6 +1859,33 @@ function init() {
   });
   document.getElementById('cs-import-yes').addEventListener('click', confirmImport);
   document.getElementById('cs-import-no').addEventListener('click',  cancelImport);
+
+  // Map image export (filter bar button + character sheet button)
+  document.getElementById('map-export-btn').addEventListener('click', exportMapImage);
+  document.getElementById('cs-map-export-btn').addEventListener('click', exportMapImage);
+
+  // Portrait regen from character sheet
+  document.getElementById('cs-regen-portrait').addEventListener('click', regenSheetPortrait);
+
+  // Arms rename panel
+  initArmsEdit();
+
+  // Reset world
+  document.getElementById('cs-reset-btn').addEventListener('click', () => {
+    document.getElementById('cs-reset-confirm').classList.remove('hidden');
+  });
+  document.getElementById('cs-reset-yes').addEventListener('click', resetWorld);
+  document.getElementById('cs-reset-no').addEventListener('click', () => {
+    document.getElementById('cs-reset-confirm').classList.add('hidden');
+  });
+
+  // Search
+  document.getElementById('search-toggle').addEventListener('click', toggleSearch);
+  document.getElementById('search-clear').addEventListener('click', toggleSearch);
+  document.getElementById('search-input').addEventListener('input', e => {
+    searchQuery = e.target.value;
+    renderMap();
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);
